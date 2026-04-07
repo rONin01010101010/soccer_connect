@@ -3,6 +3,8 @@ const mongoose = require('mongoose');
 const { app } = require('../server');
 const User = require('../models/user');
 const Event = require('../models/events');
+const Conversation = require('../models/conversation');
+const Message = require('../models/message');
 
 describe('Event Routes', () => {
   let token;
@@ -468,6 +470,87 @@ describe('Event Routes', () => {
           .send({ status: 'maybe' });
 
         expect(res.status).toBe(400);
+      });
+    });
+
+    describe('POST /api/events/:id/message', () => {
+      it('should send a message to the event host', async () => {
+        const res = await request(app)
+          .post(`/api/events/${eventId}/message`)
+          .set('Authorization', `Bearer ${requesterToken}`)
+          .send({ content: 'Hi, is this event still on?' });
+
+        expect(res.status).toBe(201);
+        expect(res.body.success).toBe(true);
+        expect(res.body.data.message.content).toBe('Hi, is this event still on?');
+        expect(res.body.data.conversation_id).toBeDefined();
+      });
+
+      it('should reuse existing conversation on second message', async () => {
+        const res1 = await request(app)
+          .post(`/api/events/${eventId}/message`)
+          .set('Authorization', `Bearer ${requesterToken}`)
+          .send({ content: 'First message' });
+
+        const res2 = await request(app)
+          .post(`/api/events/${eventId}/message`)
+          .set('Authorization', `Bearer ${requesterToken}`)
+          .send({ content: 'Second message' });
+
+        expect(res1.body.data.conversation_id.toString())
+          .toBe(res2.body.data.conversation_id.toString());
+      });
+
+      it('should allow the host to receive the message in the conversation', async () => {
+        const msgRes = await request(app)
+          .post(`/api/events/${eventId}/message`)
+          .set('Authorization', `Bearer ${requesterToken}`)
+          .send({ content: 'Can I join?' });
+
+        const convId = msgRes.body.data.conversation_id;
+
+        const res = await request(app)
+          .get(`/api/messages/conversations/${convId}`)
+          .set('Authorization', `Bearer ${creatorToken}`);
+
+        expect(res.status).toBe(200);
+        expect(res.body.data.messages.some(m => m.content === 'Can I join?')).toBe(true);
+      });
+
+      it('should fail if the host messages their own event', async () => {
+        const res = await request(app)
+          .post(`/api/events/${eventId}/message`)
+          .set('Authorization', `Bearer ${creatorToken}`)
+          .send({ content: 'Talking to myself' });
+
+        expect(res.status).toBe(400);
+      });
+
+      it('should fail without message content', async () => {
+        const res = await request(app)
+          .post(`/api/events/${eventId}/message`)
+          .set('Authorization', `Bearer ${requesterToken}`)
+          .send({});
+
+        expect(res.status).toBe(400);
+      });
+
+      it('should fail without authentication', async () => {
+        const res = await request(app)
+          .post(`/api/events/${eventId}/message`)
+          .send({ content: 'Anonymous message' });
+
+        expect(res.status).toBe(401);
+      });
+
+      it('should return 404 for non-existent event', async () => {
+        const fakeId = new mongoose.Types.ObjectId();
+        const res = await request(app)
+          .post(`/api/events/${fakeId}/message`)
+          .set('Authorization', `Bearer ${requesterToken}`)
+          .send({ content: 'Hello?' });
+
+        expect(res.status).toBe(404);
       });
     });
 

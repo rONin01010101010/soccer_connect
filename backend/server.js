@@ -84,6 +84,7 @@ app.use(cookieParser());
 
 // Middleware to ensure DB connection for each request (for serverless)
 app.use(async (req, res, next) => {
+  //if (mongoose.connection.readyState === 1) return next();
   try {
     await connectDB();
     next();
@@ -209,8 +210,7 @@ process.on('unhandledRejection', (err) => {
 });
 
 // Export for Vercel serverless and testing
-module.exports = app;
-module.exports.connectDB = connectDB;
+module.exports = { app, connectDB };
 
 // Start server only in local development (not on Vercel)
 if (NODE_ENV !== 'test' && !process.env.VERCEL) {

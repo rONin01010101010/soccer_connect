@@ -121,6 +121,9 @@ const EventDetailPage = () => {
   const [isJoining, setIsJoining] = useState(false);
   const [showShareModal, setShowShareModal] = useState(false);
   const [userStatus, setUserStatus] = useState('none');
+  const [showMessageModal, setShowMessageModal] = useState(false);
+  const [messageContent, setMessageContent] = useState('');
+  const [isSendingMessage, setIsSendingMessage] = useState(false);
 
   const eventTypeMap = {
     pickup_game: 'pickup',
@@ -330,6 +333,21 @@ const EventDetailPage = () => {
       toast.error(error.response?.data?.message || 'Failed to join event');
     } finally {
       setIsJoining(false);
+    }
+  };
+
+  const handleMessageHost = async () => {
+    if (!messageContent.trim()) return;
+    setIsSendingMessage(true);
+    try {
+      await eventsAPI.messageHost(id, messageContent.trim());
+      toast.success('Message sent to host!');
+      setShowMessageModal(false);
+      setMessageContent('');
+    } catch (error) {
+      toast.error(error.response?.data?.message || 'Failed to send message');
+    } finally {
+      setIsSendingMessage(false);
     }
   };
 
@@ -655,10 +673,25 @@ const EventDetailPage = () => {
                 ))}
                 <span className="text-sm text-[#64748b] ml-2 font-mono">{event.host.rating.toFixed(1)}</span>
               </div>
-              <button className="w-full py-2 bg-[#141c28] text-white rounded-lg border border-[#2a3a4d] hover:bg-[#1c2430] transition-all flex items-center justify-center gap-2 text-sm font-medium">
-                <FiMessageSquare className="w-4 h-4" />
-                Message Host
-              </button>
+              {!event.isCreator && (
+                isAuthenticated ? (
+                  <button
+                    onClick={() => setShowMessageModal(true)}
+                    className="w-full py-2 bg-[#141c28] text-white rounded-lg border border-[#2a3a4d] hover:bg-[#1c2430] transition-all flex items-center justify-center gap-2 text-sm font-medium"
+                  >
+                    <FiMessageSquare className="w-4 h-4" />
+                    Message Host
+                  </button>
+                ) : (
+                  <Link
+                    to="/login"
+                    className="w-full py-2 bg-[#141c28] text-[#64748b] rounded-lg border border-[#2a3a4d] hover:text-white hover:border-[#3d4f63] transition-all flex items-center justify-center gap-2 text-sm font-medium"
+                  >
+                    <FiMessageSquare className="w-4 h-4" />
+                    Login to message host
+                  </Link>
+                )
+              )}
             </div>
           </div>
         </div>
@@ -688,6 +721,41 @@ const EventDetailPage = () => {
             >
               Close
             </button>
+          </div>
+        </div>
+      )}
+
+      {/* Message Host Modal */}
+      {showMessageModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/70" onClick={() => setShowMessageModal(false)} />
+          <div className="relative w-full max-w-md bg-[#0d1219] border border-[#1c2430] rounded-xl p-6">
+            <h2 className="text-xl font-bold text-white mb-2">Message Host</h2>
+            <p className="text-sm text-[#64748b] mb-4">
+              Send a message to <span className="text-white">{event.host?.username || 'the host'}</span> about this event.
+            </p>
+            <textarea
+              value={messageContent}
+              onChange={(e) => setMessageContent(e.target.value)}
+              placeholder="Write your message..."
+              rows={4}
+              className="w-full bg-[#141c28] border border-[#2a3a4d] rounded-lg p-3 text-white placeholder-[#64748b] text-sm resize-none focus:outline-none focus:border-[#4ade80]/50 mb-4"
+            />
+            <div className="flex gap-3">
+              <button
+                onClick={() => { setShowMessageModal(false); setMessageContent(''); }}
+                className="flex-1 py-3 bg-[#141c28] text-[#64748b] rounded-lg border border-[#2a3a4d] hover:text-white transition-all font-medium text-sm"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleMessageHost}
+                disabled={isSendingMessage || !messageContent.trim()}
+                className="flex-1 py-3 bg-[#1a5f2a] text-[#4ade80] rounded-lg border border-[#22c55e]/30 hover:bg-[#22723a] transition-all font-medium text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {isSendingMessage ? 'Sending...' : 'Send Message'}
+              </button>
+            </div>
           </div>
         </div>
       )}

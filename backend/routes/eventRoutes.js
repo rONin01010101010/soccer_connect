@@ -1,6 +1,8 @@
 const express = require('express');
 const Event = require('../models/events');
 const Notification = require('../models/notification');
+const Conversation = require('../models/conversation');
+const Message = require('../models/message');
 const { protect, optionalAuth } = require('../middleware/auth');
 const { eventValidation, mongoIdValidation, paginationValidation } = require('../middleware/validators');
 
@@ -619,6 +621,93 @@ router.delete('/:id/interest', protect, mongoIdValidation, async (req, res, next
     res.json({
       success: true,
       message: 'Interest removed'
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+// @route   POST /api/events/:id/message
+// @desc    Send a message to the host of an event
+// @access  Private
+router.post('/:id/message', protect, mongoIdValidation, async (req, res, next) => {
+  try {
+    const { content } = req.body;
+
+    if (!content || !content.trim()) {
+      return res.status(400).json({
+        success: false,
+        message: 'Message content is required'
+      });
+    }
+
+    const event = await Event.findById(req.params.id);
+
+    if (!event) {
+      return res.status(404).json({
+        success: false,
+        message: 'Event not found'
+      });
+    }
+
+    if (event.creator.toString() === req.user._id.toString()) {
+      return res.status(400).json({
+        success: false,
+        message: 'You cannot message yourself as the event host'
+      });
+    }
+
+    // Find existing direct conversation between sender and host, or create one
+    let conversation = await Conversation.findOne({
+      type: 'direct',
+      participants: { $all: [req.user._id, event.creator], $size: 2 }
+    });
+
+    if (!conversation) {
+      conversation = await Conversation.create({
+        type: 'direct',
+        participants: [req.user._id, event.creator]
+      });
+    }
+
+    const message = await Message.create({
+      conversation: conversation._id,
+      sender: req.user._id,
+      content: content.trim()
+    });
+
+    // Update conversation's last_message preview
+    conversation.last_message = {
+      content: message.content,
+      sender: req.user._id,
+      sent_at: message.created_at
+    };
+    await conversation.save();
+
+    // Notify the host
+    const senderName = req.user.first_name
+      ? `${req.user.first_name} ${req.user.last_name || ''}`.trim()
+      : req.user.username;
+
+    await Notification.create({
+      user: event.creator,
+      type: 'message',
+      title: 'New Message',
+      message: `${senderName} sent you a message about your event "${event.title}"`,
+      link: `/messages/${conversation._id}`,
+      reference: { model: 'Event', id: event._id }
+    });
+
+    const populatedMessage = await Message.findById(message._id)
+      .populate('sender', 'username first_name last_name avatar');
+
+    res.status(201).json({
+      success: true,
+      message: 'Message sent to host',
+      data: {
+        message: populatedMessage,
+        conversation_id: conversation._id
+      }
     });
   } catch (error) {
     next(error);

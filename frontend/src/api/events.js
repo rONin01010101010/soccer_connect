@@ -61,4 +61,9 @@ export const eventsAPI = {
     const response = await api.get('/events/user/attending');
     return response.data;
   },
+
+  messageHost: async (id, content) => {
+    const response = await api.post(`/events/${id}/message`, { content });
+    return response.data;
+  },
 };
