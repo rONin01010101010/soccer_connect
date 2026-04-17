@@ -1,0 +1,782 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Poppins:wght@400;500;600;700;800&display=swap');
+
+@import "tailwindcss";
+
+@theme {
+  /* Soccer Connect Brand Colors */
+  /* Primary - Electric Teal */
+  --color-primary-50: #effefb;
+  --color-primary-100: #c9fef4;
+  --color-primary-200: #93fcea;
+  --color-primary-300: #55f2dd;
+  --color-primary-400: #21dfca;
+  --color-primary-500: #08c4b0;
+  --color-primary-600: #049e90;
+  --color-primary-700: #087e74;
+  --color-primary-800: #0c645e;
+  --color-primary-900: #0f524d;
+
+  /* Secondary - Sunset Orange */
+  --color-secondary-50: #fff8ed;
+  --color-secondary-100: #ffefd4;
+  --color-secondary-200: #ffdba8;
+  --color-secondary-300: #ffc170;
+  --color-secondary-400: #ff9d38;
+  --color-secondary-500: #ff7f11;
+  --color-secondary-600: #f06307;
+  --color-secondary-700: #c74a08;
+  --color-secondary-800: #9e3b0f;
+
+  /* Accent - Royal Purple */
+  --color-accent-50: #faf5ff;
+  --color-accent-100: #f3e8ff;
+  --color-accent-200: #e9d5ff;
+  --color-accent-300: #d8b4fe;
+  --color-accent-400: #c084fc;
+  --color-accent-500: #a855f7;
+  --color-accent-600: #9333ea;
+  --color-accent-700: #7e22ce;
+  --color-accent-800: #6b21a8;
+
+  /* Dark Theme - Premium Navy */
+  --color-dark-50: #f6f7f9;
+  --color-dark-100: #eceff3;
+  --color-dark-200: #d5dae3;
+  --color-dark-300: #b1baca;
+  --color-dark-400: #8694ac;
+  --color-dark-500: #677791;
+  --color-dark-600: #526178;
+  --color-dark-700: #444f62;
+  --color-dark-800: #3b4453;
+  --color-dark-850: #2d3545;
+  --color-dark-900: #232a37;
+  --color-dark-925: #1a1f2a;
+  --color-dark-950: #0d1117;
+
+  /* Field Green */
+  --color-field-500: #22c55e;
+  --color-field-600: #16a34a;
+
+  /* Fonts */
+  --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
+  --font-display: 'Poppins', system-ui, sans-serif;
+
+  /* Animations */
+  --animate-fade-in: fadeIn 0.2s ease-out;
+  --animate-fade-in-up: fadeInUp 0.25s ease-out;
+  --animate-slide-up: slideUp 0.25s ease-out;
+  --animate-slide-in-right: slideInRight 0.25s ease-out;
+  --animate-scale-in: scaleIn 0.2s ease-out;
+
+  /* Shadows */
+  --shadow-card: 0 2px 12px rgba(0, 0, 0, 0.15), 0 1px 3px rgba(0, 0, 0, 0.1);
+  --shadow-card-hover: 0 8px 30px rgba(0, 0, 0, 0.22), 0 4px 12px rgba(0, 0, 0, 0.12);
+  --shadow-primary: 0 4px 24px rgba(8, 196, 176, 0.25);
+  --shadow-secondary: 0 4px 24px rgba(255, 127, 17, 0.25);
+
+  @keyframes fadeIn {
+    0% { opacity: 0; }
+    100% { opacity: 1; }
+  }
+
+  @keyframes fadeInUp {
+    0% { opacity: 0; transform: translateY(8px); }
+    100% { opacity: 1; transform: translateY(0); }
+  }
+
+  @keyframes slideUp {
+    0% { opacity: 0; transform: translateY(16px); }
+    100% { opacity: 1; transform: translateY(0); }
+  }
+
+  @keyframes slideInRight {
+    0% { opacity: 0; transform: translateX(16px); }
+    100% { opacity: 1; transform: translateX(0); }
+  }
+
+  @keyframes scaleIn {
+    0% { opacity: 0; transform: scale(0.96); }
+    100% { opacity: 1; transform: scale(1); }
+  }
+
+  @keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+  }
+}
+
+/* ============================================
+   BASE STYLES - Soccer Connect Identity
+   ============================================ */
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background-color: var(--color-dark-950);
+  color: var(--color-dark-100);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  margin: 0;
+  min-height: 100vh;
+}
+
+* {
+  border-color: var(--color-dark-800);
+}
+
+::selection {
+  background: rgba(8, 196, 176, 0.3);
+  color: white;
+}
+
+/* Custom scrollbar - refined */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--color-dark-925);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--color-dark-700);
+  border-radius: 5px;
+  border: 2px solid var(--color-dark-925);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-dark-600);
+}
+
+/* ============================================
+   FOCUS STATES - Distinctive focus rings
+   ============================================ */
+
+:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--color-dark-950), 0 0 0 4px var(--color-primary-500);
+}
+
+/* ============================================
+   BUTTONS - Tactile, Professional
+   ============================================ */
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.625rem 1.25rem;
+  font-weight: 600;
+  font-size: 0.875rem;
+  border-radius: 8px;
+  transition: all 150ms ease;
+  cursor: pointer;
+  border: none;
+  outline: none;
+  user-select: none;
+  position: relative;
+  overflow: hidden;
+}
+
+.btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none !important;
+}
+
+.btn:active:not(:disabled) {
+  transform: scale(0.97);
+}
+
+/* Primary Button - Soccer Connect Teal */
+.btn-primary {
+  background: linear-gradient(135deg, var(--color-primary-500) 0%, var(--color-primary-600) 100%);
+  color: white;
+  box-shadow: 0 2px 8px rgba(8, 196, 176, 0.25);
+}
+
+.btn-primary:hover:not(:disabled) {
+  background: linear-gradient(135deg, var(--color-primary-400) 0%, var(--color-primary-500) 100%);
+  box-shadow: 0 4px 16px rgba(8, 196, 176, 0.35);
+  transform: translateY(-1px);
+}
+
+.btn-primary:focus-visible {
+  box-shadow: 0 0 0 2px var(--color-dark-950), 0 0 0 4px var(--color-primary-400);
+}
+
+/* Secondary Button - Solid surface */
+.btn-secondary {
+  background: var(--color-dark-800);
+  color: var(--color-dark-100);
+  border: 1px solid var(--color-dark-700);
+}
+
+.btn-secondary:hover:not(:disabled) {
+  background: var(--color-dark-700);
+  border-color: var(--color-dark-600);
+  color: white;
+}
+
+/* Accent Button - Warm Orange */
+.btn-accent {
+  background: linear-gradient(135deg, var(--color-secondary-500) 0%, var(--color-secondary-600) 100%);
+  color: white;
+  font-weight: 700;
+  box-shadow: 0 2px 8px rgba(255, 127, 17, 0.25);
+}
+
+.btn-accent:hover:not(:disabled) {
+  background: linear-gradient(135deg, var(--color-secondary-400) 0%, var(--color-secondary-500) 100%);
+  box-shadow: 0 4px 16px rgba(255, 127, 17, 0.35);
+  transform: translateY(-1px);
+}
+
+/* Outline Button */
+.btn-outline {
+  background: transparent;
+  border: 2px solid var(--color-primary-500);
+  color: var(--color-primary-400);
+}
+
+.btn-outline:hover:not(:disabled) {
+  background: rgba(8, 196, 176, 0.1);
+  border-color: var(--color-primary-400);
+  color: var(--color-primary-300);
+}
+
+/* Ghost Button */
+.btn-ghost {
+  background: transparent;
+  color: var(--color-dark-300);
+  border: 1px solid transparent;
+}
+
+.btn-ghost:hover:not(:disabled) {
+  background: var(--color-dark-850);
+  color: white;
+  border-color: var(--color-dark-700);
+}
+
+/* Danger Button */
+.btn-danger {
+  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+  color: white;
+  box-shadow: 0 2px 8px rgba(239, 68, 68, 0.25);
+}
+
+.btn-danger:hover:not(:disabled) {
+  background: linear-gradient(135deg, #f87171 0%, #ef4444 100%);
+  box-shadow: 0 4px 16px rgba(239, 68, 68, 0.35);
+  transform: translateY(-1px);
+}
+
+/* ============================================
+   INPUTS - Refined and Professional
+   ============================================ */
+
+.input {
+  width: 100%;
+  padding: 0.625rem 0.875rem;
+  background-color: var(--color-dark-900);
+  border: 1px solid var(--color-dark-700);
+  border-radius: 8px;
+  color: white;
+  font-size: 0.875rem;
+  transition: all 150ms ease;
+}
+
+.input::placeholder {
+  color: var(--color-dark-500);
+}
+
+.input:hover:not(:focus):not(:disabled) {
+  border-color: var(--color-dark-600);
+}
+
+.input:focus {
+  outline: none;
+  border-color: var(--color-primary-500);
+  box-shadow: 0 0 0 3px rgba(8, 196, 176, 0.15);
+}
+
+.input:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  background-color: var(--color-dark-850);
+}
+
+.input-error {
+  border-color: #ef4444;
+}
+
+.input-error:focus {
+  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.15);
+  border-color: #ef4444;
+}
+
+/* Select styling */
+select.input {
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%238694ac' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0.75rem center;
+  padding-right: 2.5rem;
+}
+
+/* Textarea */
+textarea.input {
+  resize: vertical;
+  min-height: 100px;
+}
+
+/* ============================================
+   CARDS - Solid depth, no glass
+   ============================================ */
+
+.card {
+  background-color: var(--color-dark-900);
+  border: 1px solid var(--color-dark-800);
+  border-radius: 12px;
+  padding: 1.25rem;
+  box-shadow: var(--shadow-card);
+  transition: all 200ms ease;
+}
+
+.card-hover:hover {
+  border-color: var(--color-dark-700);
+  box-shadow: var(--shadow-card-hover);
+  transform: translateY(-2px);
+}
+
+.card-interactive {
+  cursor: pointer;
+}
+
+.card-interactive:hover {
+  border-color: var(--color-primary-600);
+  box-shadow: var(--shadow-card-hover), 0 0 0 1px var(--color-primary-600);
+}
+
+/* Card with accent stripe */
+.card-accent {
+  border-left: 3px solid var(--color-primary-500);
+}
+
+.card-accent-secondary {
+  border-left: 3px solid var(--color-secondary-500);
+}
+
+/* ============================================
+   BADGES - Personality and clarity
+   ============================================ */
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.25rem 0.625rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  border-radius: 6px;
+  text-transform: capitalize;
+}
+
+.badge-primary {
+  background-color: rgba(8, 196, 176, 0.15);
+  color: var(--color-primary-400);
+  border: 1px solid rgba(8, 196, 176, 0.3);
+}
+
+.badge-secondary {
+  background-color: rgba(255, 127, 17, 0.15);
+  color: var(--color-secondary-400);
+  border: 1px solid rgba(255, 127, 17, 0.3);
+}
+
+.badge-accent {
+  background-color: rgba(168, 85, 247, 0.15);
+  color: var(--color-accent-400);
+  border: 1px solid rgba(168, 85, 247, 0.3);
+}
+
+.badge-gray {
+  background-color: var(--color-dark-800);
+  color: var(--color-dark-300);
+  border: 1px solid var(--color-dark-700);
+}
+
+.badge-success {
+  background-color: rgba(16, 185, 129, 0.15);
+  color: #34d399;
+  border: 1px solid rgba(16, 185, 129, 0.3);
+}
+
+.badge-warning {
+  background-color: rgba(251, 191, 36, 0.15);
+  color: #fbbf24;
+  border: 1px solid rgba(251, 191, 36, 0.3);
+}
+
+.badge-danger {
+  background-color: rgba(239, 68, 68, 0.15);
+  color: #f87171;
+  border: 1px solid rgba(239, 68, 68, 0.3);
+}
+
+/* ============================================
+   TABLES - Scannable data
+   ============================================ */
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.table th {
+  text-align: left;
+  padding: 0.875rem 1rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--color-dark-400);
+  background-color: var(--color-dark-850);
+  border-bottom: 1px solid var(--color-dark-800);
+}
+
+.table td {
+  padding: 0.875rem 1rem;
+  font-size: 0.875rem;
+  color: var(--color-dark-200);
+  border-bottom: 1px solid var(--color-dark-850);
+}
+
+.table tbody tr {
+  transition: background-color 100ms ease;
+}
+
+.table tbody tr:hover {
+  background-color: var(--color-dark-850);
+}
+
+.table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+/* ============================================
+   SECTION STYLES
+   ============================================ */
+
+.section {
+  padding: 4rem 1rem;
+}
+
+.section-title {
+  font-size: 2rem;
+  font-family: var(--font-display);
+  font-weight: 700;
+  color: white;
+  margin-bottom: 0.75rem;
+  letter-spacing: -0.02em;
+}
+
+@media (min-width: 768px) {
+  .section-title {
+    font-size: 2.5rem;
+  }
+}
+
+.section-subtitle {
+  font-size: 1rem;
+  color: var(--color-dark-400);
+  max-width: 40rem;
+  line-height: 1.6;
+}
+
+@media (min-width: 768px) {
+  .section-subtitle {
+    font-size: 1.125rem;
+  }
+}
+
+/* ============================================
+   GRADIENTS & TEXT EFFECTS
+   ============================================ */
+
+.gradient-text {
+  background: linear-gradient(135deg, var(--color-primary-400) 0%, var(--color-primary-300) 50%, var(--color-secondary-400) 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.gradient-text-accent {
+  background: linear-gradient(135deg, var(--color-secondary-400) 0%, var(--color-secondary-300) 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+/* ============================================
+   LINKS
+   ============================================ */
+
+.link {
+  color: var(--color-primary-400);
+  transition: color 150ms ease;
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.link:hover {
+  color: var(--color-primary-300);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+/* ============================================
+   AVATAR
+   ============================================ */
+
+.avatar {
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--color-primary-500) 0%, var(--color-secondary-500) 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-weight: 600;
+  font-size: 0.875rem;
+  border: 2px solid var(--color-dark-800);
+}
+
+.avatar-lg {
+  width: 4rem;
+  height: 4rem;
+  font-size: 1.25rem;
+  border-width: 3px;
+}
+
+.avatar-sm {
+  width: 2rem;
+  height: 2rem;
+  font-size: 0.75rem;
+}
+
+/* ============================================
+   STAT NUMBERS - Stand out
+   ============================================ */
+
+.stat-value {
+  font-size: 2rem;
+  font-weight: 700;
+  color: white;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.02em;
+}
+
+.stat-value-lg {
+  font-size: 2.75rem;
+  font-weight: 800;
+}
+
+.stat-label {
+  font-size: 0.8125rem;
+  color: var(--color-dark-400);
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+/* ============================================
+   LOADING STATES
+   ============================================ */
+
+.skeleton {
+  background: linear-gradient(90deg,
+    var(--color-dark-800) 0%,
+    var(--color-dark-700) 50%,
+    var(--color-dark-800) 100%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.5s ease-in-out infinite;
+  border-radius: 6px;
+}
+
+@keyframes shimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+.spinner {
+  border: 3px solid var(--color-dark-700);
+  border-top-color: var(--color-primary-500);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+/* ============================================
+   UTILITY CLASSES
+   ============================================ */
+
+.text-balance {
+  text-wrap: balance;
+}
+
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
+/* Touch-friendly targets */
+.touch-target {
+  min-height: 44px;
+  min-width: 44px;
+}
+
+/* Divider */
+.divider {
+  height: 1px;
+  background-color: var(--color-dark-800);
+  margin: 1rem 0;
+}
+
+/* ============================================
+   DROPDOWN MENUS
+   ============================================ */
+
+.dropdown-menu {
+  background: var(--color-dark-850);
+  border: 1px solid var(--color-dark-700);
+  border-radius: 10px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+  overflow: hidden;
+  min-width: 180px;
+}
+
+.dropdown-item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  width: 100%;
+  padding: 0.625rem 1rem;
+  font-size: 0.875rem;
+  color: var(--color-dark-300);
+  transition: all 100ms ease;
+  cursor: pointer;
+  border: none;
+  background: none;
+  text-align: left;
+}
+
+.dropdown-item:hover {
+  background-color: var(--color-dark-800);
+  color: white;
+}
+
+.dropdown-item-danger {
+  color: #f87171;
+}
+
+.dropdown-item-danger:hover {
+  background-color: rgba(239, 68, 68, 0.1);
+  color: #fca5a5;
+}
+
+/* ============================================
+   TABS
+   ============================================ */
+
+.tab-list {
+  display: flex;
+  gap: 0.25rem;
+  padding: 0.25rem;
+  background-color: var(--color-dark-900);
+  border-radius: 10px;
+  border: 1px solid var(--color-dark-800);
+}
+
+.tab {
+  padding: 0.5rem 1rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--color-dark-400);
+  border-radius: 8px;
+  transition: all 150ms ease;
+  cursor: pointer;
+  border: none;
+  background: none;
+}
+
+.tab:hover:not(.tab-active) {
+  color: var(--color-dark-200);
+  background-color: var(--color-dark-850);
+}
+
+.tab-active {
+  background-color: var(--color-primary-500);
+  color: white;
+  box-shadow: 0 2px 8px rgba(8, 196, 176, 0.25);
+}
+
+/* ============================================
+   TOOLTIPS
+   ============================================ */
+
+.tooltip {
+  position: relative;
+}
+
+.tooltip::after {
+  content: attr(data-tooltip);
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 0.375rem 0.75rem;
+  background-color: var(--color-dark-700);
+  color: white;
+  font-size: 0.75rem;
+  font-weight: 500;
+  border-radius: 6px;
+  white-space: nowrap;
+  opacity: 0;
+  visibility: hidden;
+  transition: all 150ms ease;
+  margin-bottom: 0.5rem;
+}
+
+.tooltip:hover::after {
+  opacity: 1;
+  visibility: visible;
+}
+
+/* ============================================
+   PAGE PATTERNS (optional subtle backgrounds)
+   ============================================ */
+
+.bg-pattern-field {
+  background-image:
+    linear-gradient(90deg, rgba(8, 196, 176, 0.02) 1px, transparent 1px),
+    linear-gradient(rgba(8, 196, 176, 0.02) 1px, transparent 1px);
+  background-size: 32px 32px;
+}
+
+.bg-pattern-grid {
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.015) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.015) 1px, transparent 1px);
+  background-size: 24px 24px;
+}
