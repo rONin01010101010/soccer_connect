@@ -427,6 +427,9 @@ const createEvents = async (users, fields) => {
   return Event.insertMany(events);
 };
 
+// Default image shown on all seed classifieds — posters can replace via Edit Listing
+const DEFAULT_CLASSIFIED_IMAGE = 'https://placehold.co/800x600/0d4a1a/4ade80?text=Soccer+Connect';
+
 // Create classifieds - comprehensive marketplace seed covering all types
 const createClassifieds = async (users) => {
   const marcus  = users.find(u => u.username === 'marcusj');
@@ -447,6 +450,7 @@ const createClassifieds = async (users) => {
       condition: 'like-new',
       location: 'Toronto, Ontario',
       contact_email: 'marcus@test.com',
+      images: [DEFAULT_CLASSIFIED_IMAGE],
       approval_status: 'approved',
       status: 'active'
     },
@@ -459,6 +463,7 @@ const createClassifieds = async (users) => {
       condition: 'good',
       location: 'Toronto, Ontario',
       contact_email: 'marcus@test.com',
+      images: [DEFAULT_CLASSIFIED_IMAGE],
       approval_status: 'approved',
       status: 'active'
     },
@@ -471,6 +476,7 @@ const createClassifieds = async (users) => {
       condition: 'like-new',
       location: 'Vaughan, Ontario',
       contact_email: 'jamesw@test.com',
+      images: [DEFAULT_CLASSIFIED_IMAGE],
       approval_status: 'approved',
       status: 'active'
     },
@@ -483,6 +489,7 @@ const createClassifieds = async (users) => {
       condition: 'good',
       location: 'Mississauga, Ontario',
       contact_email: 'sofia@test.com',
+      images: [DEFAULT_CLASSIFIED_IMAGE],
       approval_status: 'approved',
       status: 'active'
     },
@@ -494,6 +501,7 @@ const createClassifieds = async (users) => {
       price: 80,
       condition: 'fair',
       location: 'Vaughan, Ontario',
+      images: [DEFAULT_CLASSIFIED_IMAGE],
       approval_status: 'approved',
       status: 'active'
     },
@@ -505,6 +513,7 @@ const createClassifieds = async (users) => {
       price: 0,
       condition: 'fair',
       location: 'Vaughan, Ontario',
+      images: [DEFAULT_CLASSIFIED_IMAGE],
       approval_status: 'approved',
       status: 'active'
     },
@@ -517,6 +526,7 @@ const createClassifieds = async (users) => {
       creator: soroush._id,
       location: 'North York, Ontario',
       contact_email: 'soroush.salari2023@gmail.com',
+      images: [DEFAULT_CLASSIFIED_IMAGE],
       approval_status: 'approved',
       status: 'active'
     },
@@ -526,6 +536,7 @@ const createClassifieds = async (users) => {
       classified_type: 'equipment_wanted',
       creator: emma._id,
       location: 'Brampton, Ontario',
+      images: [DEFAULT_CLASSIFIED_IMAGE],
       approval_status: 'approved',
       status: 'active'
     },
@@ -540,6 +551,7 @@ const createClassifieds = async (users) => {
       position_needed: 'forward',
       skill_level: 'competitive',
       contact_email: 'sofia@test.com',
+      images: [DEFAULT_CLASSIFIED_IMAGE],
       approval_status: 'approved',
       status: 'active'
     },
@@ -552,6 +564,7 @@ const createClassifieds = async (users) => {
       position_needed: 'goalkeeper',
       skill_level: 'beginner',
       contact_email: 'emma@test.com',
+      images: [DEFAULT_CLASSIFIED_IMAGE],
       approval_status: 'approved',
       status: 'active'
     },
@@ -564,6 +577,7 @@ const createClassifieds = async (users) => {
       position_needed: 'defender',
       skill_level: 'intermediate',
       contact_email: 'marcus@test.com',
+      images: [DEFAULT_CLASSIFIED_IMAGE],
       approval_status: 'approved',
       status: 'active'
     },
@@ -577,6 +591,7 @@ const createClassifieds = async (users) => {
       location: 'North York, Ontario',
       skill_level: 'intermediate',
       contact_email: 'soroush.salari2023@gmail.com',
+      images: [DEFAULT_CLASSIFIED_IMAGE],
       approval_status: 'approved',
       status: 'active'
     },
@@ -587,6 +602,7 @@ const createClassifieds = async (users) => {
       creator: emma._id,
       location: 'Brampton, Ontario',
       skill_level: 'competitive',
+      images: [DEFAULT_CLASSIFIED_IMAGE],
       approval_status: 'approved',
       status: 'active'
     },
@@ -600,6 +616,7 @@ const createClassifieds = async (users) => {
       price: 75,
       location: 'Etobicoke, Ontario',
       contact_email: 'admin@soccerconnect.com',
+      images: [DEFAULT_CLASSIFIED_IMAGE],
       approval_status: 'approved',
       status: 'active'
     },
@@ -611,6 +628,7 @@ const createClassifieds = async (users) => {
       price: 60,
       location: 'Vaughan, Ontario',
       contact_email: 'jamesw@test.com',
+      images: [DEFAULT_CLASSIFIED_IMAGE],
       approval_status: 'approved',
       status: 'active'
     },
@@ -622,6 +640,7 @@ const createClassifieds = async (users) => {
       classified_type: 'other',
       creator: marcus._id,
       location: 'Etobicoke, Ontario',
+      images: [DEFAULT_CLASSIFIED_IMAGE],
       approval_status: 'approved',
       status: 'active'
     },
@@ -631,6 +650,7 @@ const createClassifieds = async (users) => {
       classified_type: 'other',
       creator: sofia._id,
       location: 'Mississauga, Ontario',
+      images: [DEFAULT_CLASSIFIED_IMAGE],
       approval_status: 'approved',
       status: 'active'
     },
@@ -644,6 +664,7 @@ const createClassifieds = async (users) => {
       price: 120,
       condition: 'good',
       location: 'North York, Ontario',
+      images: [DEFAULT_CLASSIFIED_IMAGE],
       approval_status: 'pending',
       status: 'active'
     }

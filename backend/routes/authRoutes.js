@@ -426,6 +426,36 @@ router.get('/verify-email/:token', async (req, res, next) => {
   }
 });
 
+// @route   POST /api/auth/reset-password-direct
+// @desc    Reset password directly (no email token) — email must exist in system
+// @access  Public
+router.post('/reset-password-direct', async (req, res, next) => {
+  try {
+    const { email, newPassword } = req.body;
+
+    if (!email || !newPassword) {
+      return res.status(400).json({ success: false, message: 'Email and new password are required' });
+    }
+
+    if (newPassword.length < 6) {
+      return res.status(400).json({ success: false, message: 'Password must be at least 6 characters' });
+    }
+
+    const user = await User.findOne({ email: email.toLowerCase() }).select('+password');
+
+    if (!user) {
+      return res.status(404).json({ success: false, message: 'No account found with that email address' });
+    }
+
+    user.password = newPassword;
+    await user.save();
+
+    res.json({ success: true, message: 'Password reset successfully. You can now sign in.' });
+  } catch (error) {
+    next(error);
+  }
+});
+
 // @route   POST /api/auth/forgot-password
 // @desc    Request password reset email
 // @access  Public

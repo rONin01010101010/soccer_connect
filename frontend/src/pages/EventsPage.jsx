@@ -174,9 +174,19 @@ const EventCard = ({ event }) => {
     other: { bg: 'bg-[#64748b]/10', text: 'text-[#64748b]' },
   };
 
+  const stockImages = {
+    pickup: 'https://images.unsplash.com/photo-1551958219-acbc630c5ffa?w=600&q=75&fit=crop',
+    tournament: 'https://images.unsplash.com/photo-1574629810360-7efbbe195018?w=600&q=75&fit=crop',
+    training: 'https://images.unsplash.com/photo-1607627000458-210e8d2bdb1d?w=600&q=75&fit=crop',
+    tryout: 'https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=600&q=75&fit=crop',
+    social: 'https://images.unsplash.com/photo-1529900748604-07564a03e7a6?w=600&q=75&fit=crop',
+    other: 'https://images.unsplash.com/photo-1431324155629-1a6deb1dec8d?w=600&q=75&fit=crop',
+  };
+
   const type = typeColors[event.type?.toLowerCase()] || typeColors.other;
   const isFull = event.players >= event.maxPlayers;
   const percentage = event.maxPlayers > 0 ? (event.players / event.maxPlayers) * 100 : 0;
+  const coverSrc = event.image || stockImages[event.type?.toLowerCase()] || stockImages.other;
 
   return (
     <Link
@@ -184,8 +194,8 @@ const EventCard = ({ event }) => {
       className="group bg-[#0d1219] border border-[#1c2430] rounded-xl overflow-hidden hover:border-[#2a3a4d] transition-all"
     >
       {/* Header */}
-      <div className="relative h-32 bg-gradient-to-br from-[#1a5f2a]/20 to-[#141c28] flex items-center justify-center">
-        <GiSoccerBall className="w-16 h-16 text-[#4ade80]/20" />
+      <div className="relative h-32 bg-gradient-to-br from-[#1a5f2a]/20 to-[#141c28] flex items-center justify-center overflow-hidden">
+        <img src={coverSrc} alt={event.title} className="w-full h-full object-cover opacity-70 group-hover:opacity-90 transition-opacity" />
         <div className={`absolute top-3 left-3 px-3 py-1 rounded-lg ${type.bg}`}>
           <span className={`text-xs font-medium uppercase tracking-wider ${type.text}`}>
             {event.type}
@@ -296,6 +306,7 @@ const EventsPage = () => {
           players: event.attendees?.filter(a => a.status === 'going')?.length || event.players || 0,
           maxPlayers: event.max_participants || event.maxPlayers || 0,
           skillLevel: event.skill_level || event.skillLevel || 'all',
+          image: event.image || null,
           host: {
             name: event.organizer?.first_name
               ? `${event.organizer.first_name} ${event.organizer.last_name || ''}`.trim()

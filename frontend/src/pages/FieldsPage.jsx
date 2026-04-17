@@ -48,12 +48,16 @@ const FieldCard = ({ field }) => {
       className="group bg-[#0d1219] border border-[#1c2430] rounded-xl overflow-hidden hover:border-[#2a3a4d] transition-all"
     >
       {/* Header Image */}
-      <div className="relative h-40 bg-gradient-to-br from-[#1a5f2a]/20 to-[#141c28] flex items-center justify-center">
-        {field.image ? (
-          <img src={field.image} alt={field.name} className="w-full h-full object-cover" />
-        ) : (
+      <div className="relative h-40 bg-gradient-to-br from-[#1a5f2a]/20 to-[#141c28] flex items-center justify-center overflow-hidden">
+        <img
+          src={field.image || 'https://images.unsplash.com/photo-1574629810360-7efbbe195018?w=600&q=75&fit=crop'}
+          alt={field.name}
+          className="w-full h-full object-cover"
+          onError={(e) => { e.target.style.display = 'none'; e.target.nextSibling.style.display = 'flex'; }}
+        />
+        <div className="hidden w-full h-full items-center justify-center">
           <GiSoccerField className="w-16 h-16 text-[#4ade80]/30" />
-        )}
+        </div>
 
         {/* Type Badge */}
         <div className={`absolute top-3 left-3 px-3 py-1 rounded-lg ${type.bg}`}>

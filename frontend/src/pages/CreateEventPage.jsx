@@ -13,6 +13,8 @@ import {
   FiArrowLeft,
   FiArrowRight,
   FiCheck,
+  FiUpload,
+  FiX,
 } from 'react-icons/fi';
 import { GiSoccerBall } from 'react-icons/gi';
 
@@ -50,6 +52,8 @@ const CreateEventPage = () => {
   const navigate = useNavigate();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [currentStep, setCurrentStep] = useState(1);
+  const [coverImage, setCoverImage] = useState(null);
+  const [coverPreview, setCoverPreview] = useState(null);
 
   const steps = [
     { id: 1, title: 'Basic Info' },
@@ -93,9 +97,28 @@ const CreateEventPage = () => {
 
   const handleBack = () => setCurrentStep((prev) => prev - 1);
 
+  const handleCoverImage = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setCoverImage(file);
+    setCoverPreview(URL.createObjectURL(file));
+  };
+
+  const removeCoverImage = () => {
+    if (coverPreview) URL.revokeObjectURL(coverPreview);
+    setCoverImage(null);
+    setCoverPreview(null);
+  };
+
   const onSubmit = async (data) => {
     setIsSubmitting(true);
     try {
+      let imageUrl = '';
+      if (coverImage) {
+        const { uploadImage } = await import('../api/upload');
+        imageUrl = await uploadImage(coverImage, 'soccer-connect/events');
+      }
+
       const eventData = {
         title: data.title,
         description: data.description,
@@ -107,6 +130,7 @@ const CreateEventPage = () => {
         price: data.price,
         max_participants: data.max_participants,
         skill_level: data.skill_level,
+        ...(imageUrl && { image: imageUrl }),
       };
 
       const { eventsAPI } = await import('../api/events');
@@ -206,6 +230,29 @@ const CreateEventPage = () => {
                     error={errors.title?.message}
                     {...register('title')}
                   />
+
+                  <div className="space-y-2">
+                    <label className="text-xs uppercase tracking-wider text-[#64748b]">Cover Photo (optional)</label>
+                    {coverPreview ? (
+                      <div className="relative rounded-lg overflow-hidden border border-[#2a3a4d] h-40">
+                        <img src={coverPreview} alt="Cover" className="w-full h-full object-cover" />
+                        <button
+                          type="button"
+                          onClick={removeCoverImage}
+                          className="absolute top-2 right-2 w-7 h-7 rounded-full bg-[#0d1219]/80 text-white flex items-center justify-center hover:bg-[#ef4444] transition-colors"
+                        >
+                          <FiX size={14} />
+                        </button>
+                      </div>
+                    ) : (
+                      <label className="flex flex-col items-center justify-center h-32 border-2 border-dashed border-[#2a3a4d] rounded-lg cursor-pointer hover:border-[#a855f7]/50 transition-colors">
+                        <FiUpload className="w-6 h-6 text-[#64748b] mb-2" />
+                        <span className="text-sm text-[#64748b]">Upload a cover photo</span>
+                        <span className="text-xs text-[#475569] mt-1">JPG, PNG up to 10 MB</span>
+                        <input type="file" accept="image/*" className="hidden" onChange={handleCoverImage} />
+                      </label>
+                    )}
+                  </div>
                   <div>
                     <label className="block text-xs uppercase tracking-wider text-[#64748b] mb-4">Event Type</label>
                     <div className="grid sm:grid-cols-2 gap-3">

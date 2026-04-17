@@ -47,4 +47,9 @@ export const authAPI = {
     const response = await api.post('/auth/heartbeat');
     return response.data;
   },
+
+  resetPasswordDirect: async (email, newPassword) => {
+    const response = await api.post('/auth/reset-password-direct', { email, newPassword });
+    return response.data;
+  },
 };

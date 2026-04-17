@@ -36,6 +36,7 @@ import FindPlayersPage from './pages/FindPlayersPage';
 import AboutPage from './pages/AboutPage';
 import NotificationsPage from './pages/NotificationsPage';
 import EditClassifiedPage from './pages/EditClassifiedPage';
+import ForgotPasswordPage from './pages/ForgotPasswordPage';
 
 // Admin Pages
 import {
@@ -95,6 +96,7 @@ function App() {
           <Route index element={<HomePage />} />
           <Route path="login" element={<LoginPage />} />
           <Route path="register" element={<RegisterPage />} />
+          <Route path="forgot-password" element={<ForgotPasswordPage />} />
           <Route path="terms" element={<TermsPage />} />
           <Route path="privacy" element={<PrivacyPage />} />
           <Route path="events" element={<EventsPage />} />

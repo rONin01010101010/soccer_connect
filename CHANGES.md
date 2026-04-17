@@ -309,6 +309,175 @@ The "Clear Filters" button reset filter dropdowns but left the search query text
 
 ---
 
+### 2. Browser Tab Title — April 2026
+
+**File:** `frontend/index.html`
+
+Changed the `<title>` tag from the generic placeholder `"frontend"` to `"Soccer Connect"`. The correct application name now appears in the browser tab and bookmarks.
+
+---
+
+### 3. Navbar — Username Display Fix — April 2026
+
+**File:** `frontend/src/components/layout/Navbar.jsx`
+
+Previously the top-right user button and mobile menu header were passing `user?.profileImage` (a field that does not exist on the user object) to the Avatar component and `user?.name` for initials — both undefined — causing the display to fall back to the generic string `"User"`.
+
+**Changes made:**
+- Avatar `src` prop corrected from `user?.profileImage` → `user?.avatar` (the actual field returned by the backend)
+- Avatar `name` prop corrected from `user?.name` → `user?.first_name || user?.username` so initials render correctly
+- Display text in the top-right button, the dropdown header, and the mobile menu all changed to show `user?.username` — the username the person signed up with
+- Mobile menu secondary line changed from `@{user?.username}` to `{user?.email}` for additional context
+
+---
+
+### 4. Cloudinary Image Integration — April 2026
+
+Replaced the previous approach of converting images to base64 strings and storing them directly in MongoDB. Images are now uploaded to Cloudinary's CDN and stored as permanent URLs, which are faster to serve, cheaper to store, and remove the 10 MB JSON body strain on the database.
+
+#### 4a. Backend — Cloudinary Config & Upload Endpoint
+
+**Files created:**
+- `backend/config/cloudinary.js` — initialises the Cloudinary SDK using credentials from environment variables
+- `backend/routes/uploadRoutes.js` — a new authenticated `POST /api/upload` route that accepts a single image via `multipart/form-data`, streams it to Cloudinary using memory storage (no disk writes), and returns `{ url, public_id }`
+
+**Files modified:**
+- `backend/server.js` — imports and registers the upload route at `/api/upload`
+- `backend/.env` — `CLOUDINARY_CLOUD_NAME`, `CLOUDINARY_API_KEY`, and `CLOUDINARY_API_SECRET` filled in with real credentials
+
+**Packages installed:** `cloudinary`, `multer`
+
+**Upload route behaviour:**
+- Requires a valid JWT (protected route)
+- Rejects non-image MIME types with a `400` response
+- Rejects files over 10 MB with a `400` response
+- Accepts an optional `?folder=` query parameter so different parts of the app store images in organised Cloudinary folders (`soccer-connect/avatars`, `soccer-connect/events`, `soccer-connect/classifieds`)
+- On Cloudinary errors, passes the error to the global error handler and returns `500`
+
+#### 4b. Frontend — Upload Helper
+
+**File created:** `frontend/src/api/upload.js`
+
+A lightweight `uploadImage(file, folder)` function that uses the native `fetch` API (not axios) to POST a `FormData` object to `/api/upload`. Using `fetch` here avoids axios intercepting and overwriting the `Content-Type` header, which would break multipart boundary detection. Returns the Cloudinary URL string on success.
+
+#### 4c. Account Page — Profile Avatar
+
+**File:** `frontend/src/pages/AccountPage.jsx`
+
+Removed the `resizeImageToBase64()` canvas function. The `handleFileSelect` handler now calls `uploadImage(file, 'soccer-connect/avatars')` to get a Cloudinary URL, then saves that URL to the user record via `usersAPI.update()`. A local `URL.createObjectURL()` preview is shown immediately while the upload is in progress.
+
+#### 4d. Create Classified (Marketplace) Page
+
+**File:** `frontend/src/pages/CreateClassifiedPage.jsx`
+
+The image selection UI already existed but images were never sent to the backend. The `onSubmit` handler now uploads all selected image files in parallel to Cloudinary (`soccer-connect/classifieds`), collects the returned URLs, and passes the `images` array to `classifiedsAPI.create()`.
+
+#### 4e. Create Event Page
+
+**File:** `frontend/src/pages/CreateEventPage.jsx`
+
+Added an optional **Cover Photo** upload field to Step 1 of the event creation form. On final submission, if a cover image was selected it is uploaded to `soccer-connect/events` and the returned URL is included as the `image` field in the event payload.
+
+#### 4f. Display Pages — Stock & Uploaded Images
+
+**`frontend/src/pages/FieldsPage.jsx`** — The `FieldCard` component now always renders an `<img>` tag. When a field has no uploaded images it shows a stock Unsplash photo of a soccer pitch. An `onError` handler falls back to the icon if the stock image fails to load.
+
+**`frontend/src/pages/EventsPage.jsx`** — The data transform now includes `image: event.image || null`. The `EventCard` maps each event type to a dedicated stock Unsplash photo (pickup game, tournament, training, tryout, social, other). When a creator has uploaded a custom cover photo, that takes priority.
+
+**`frontend/src/pages/ClassifiedsPage.jsx`** — Both the grid (`ListingCard`) and list (`ListingRow`) view components now render the actual listing image when one exists, replacing the static tag icon placeholder.
+
+#### 4g. Cloudinary Upload Tests
+
+**File:** `backend/tests/upload.test.js`
+
+Seven tests covering the full behaviour of `POST /api/upload`. Cloudinary is mocked with `jest.mock()` so tests never hit the real API.
+
+| Test | Expected result |
+|---|---|
+| Unauthenticated request | `401` |
+| No file attached | `400` — "No image provided" |
+| Non-image file | `400` — multer file filter rejects it |
+| Successful upload | `200` with a `https://res.cloudinary.com/...` URL |
+| Custom `?folder=` param | Cloudinary `upload_stream` called with correct folder |
+| File over 10 MB | `400` — multer size limit |
+| Cloudinary failure | `500` — error handled gracefully |
+
+---
+
+### 5. Forgot Password — 2-Step Flow — April 2026
+
+#### 5a. Backend — Direct Password Reset Endpoint
+
+**File:** `backend/routes/authRoutes.js`
+
+Added `POST /api/auth/reset-password-direct`. This is a public endpoint (no JWT required) that accepts `{ email, newPassword }`, looks up the user by email, and calls `user.save()` — the existing Mongoose pre-save hook automatically bcrypt-hashes the new password. Returns `404` if the email is not registered.
+
+#### 5b. Frontend — Auth API Method
+
+**File:** `frontend/src/api/auth.js`
+
+Added `resetPasswordDirect(email, newPassword)` which posts to the new backend endpoint.
+
+#### 5c. Frontend — Forgot Password Page
+
+**File created:** `frontend/src/pages/ForgotPasswordPage.jsx`
+
+A two-step page matching the visual style of the Login page (dark background, grid overlay, green glow, Soccer Connect logo icon).
+
+**Step 1 — Email Verification:**
+- User enters their email address
+- Calls `authAPI.checkEmail(email)`
+- If `available: true`, the email is not registered → error toast
+- If `available: false`, the account exists → advances to Step 2
+
+**Step 2 — New Password:**
+- User enters a new password and confirms it
+- Zod validation ensures minimum 6 characters and that both fields match
+- On submit, calls `authAPI.resetPasswordDirect(email, newPassword)`
+- On success, shows a toast and redirects to `/login`
+- A back arrow returns to Step 1 without losing the email
+
+A step indicator (two numbered circles with a connecting line) turns green as each step is completed.
+
+#### 5d. Route Registration
+
+**File:** `frontend/src/App.jsx`
+
+- Imported `ForgotPasswordPage`
+- Added `<Route path="forgot-password" element={<ForgotPasswordPage />} />` as a public route
+- The "Forgot password?" link in `LoginForm.jsx` already pointed to `/forgot-password`
+
+---
+
+### 6. Marketplace Seed Data — Default Soccer Connect Image — April 2026
+
+**File:** `backend/seeds/index.js`
+
+All 17 classified listings in the seed data now include:
+
+```js
+images: ['https://placehold.co/800x600/0d4a1a/4ade80?text=Soccer+Connect']
+```
+
+This renders a dark green background (`#0d4a1a`) with bright green text (`#4ade80`) reading "Soccer Connect" — matching the application's colour scheme. Every seed listing has a branded placeholder instead of appearing imageless on the marketplace.
+
+---
+
+### 7. Edit Classified Page — Image Upload — April 2026
+
+**File:** `frontend/src/pages/EditClassifiedPage.jsx`
+
+Added a **Listing Photo** section at the top of the edit form so listing owners can replace the default Soccer Connect image with their own photo.
+
+**Behaviour:**
+- On load, fetches the existing `images` array. If none exist, falls back to the Soccer Connect default placeholder
+- The current cover image is displayed in a preview panel
+- An "Upload a new photo" button opens a file picker; the selected image is previewed immediately via `URL.createObjectURL`
+- A remove (×) button reverts to the previous image before saving
+- On submit: if a new file was selected, it is uploaded to Cloudinary (`soccer-connect/classifieds`), the URL is prepended to the images array, and the full update is sent to the backend. The default placeholder URL is stripped from the saved array so it is not stored redundantly
+
+---
+
 ## CI/CD
 
 - GitHub Actions workflow deploys to Vercel on push

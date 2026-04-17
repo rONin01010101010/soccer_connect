@@ -4,7 +4,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { toast } from 'react-hot-toast';
-import { FiArrowLeft, FiSave } from 'react-icons/fi';
+import { FiArrowLeft, FiSave, FiUpload, FiX } from 'react-icons/fi';
 import { classifiedsAPI } from '../api/classifieds';
 import { Loading } from '../components/common';
 
@@ -28,11 +28,16 @@ const InputField = ({ label, error, ...props }) => (
   </div>
 );
 
+const DEFAULT_IMAGE = 'https://placehold.co/800x600/0d4a1a/4ade80?text=Soccer+Connect';
+
 const EditClassifiedPage = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [currentImages, setCurrentImages] = useState([]);
+  const [newImageFile, setNewImageFile] = useState(null);
+  const [newImagePreview, setNewImagePreview] = useState(null);
 
   const categories = [
     { value: 'looking_for_players', label: 'Looking for Players' },
@@ -74,6 +79,7 @@ const EditClassifiedPage = () => {
           location: data.location || '',
           description: data.description || '',
         });
+        setCurrentImages(data.images?.length ? data.images : [DEFAULT_IMAGE]);
       } catch (error) {
         toast.error('Failed to load listing');
         navigate('/classifieds');
@@ -89,10 +95,30 @@ const EditClassifiedPage = () => {
   const showCondition = watchedType === 'equipment_sale' || watchedType === 'equipment_wanted';
   const showPrice = watchedType === 'equipment_sale' || watchedType === 'coaching';
 
+  const handleImageSelect = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (!file.type.startsWith('image/')) { toast.error('Please select an image'); return; }
+    setNewImageFile(file);
+    setNewImagePreview(URL.createObjectURL(file));
+  };
+
+  const removeNewImage = () => {
+    if (newImagePreview) URL.revokeObjectURL(newImagePreview);
+    setNewImageFile(null);
+    setNewImagePreview(null);
+  };
+
   const onSubmit = async (data) => {
     setIsSubmitting(true);
     try {
-      await classifiedsAPI.update(id, data);
+      let images = currentImages.filter(u => u !== DEFAULT_IMAGE);
+      if (newImageFile) {
+        const { uploadImage } = await import('../api/upload');
+        const url = await uploadImage(newImageFile, 'soccer-connect/classifieds');
+        images = [url, ...images];
+      }
+      await classifiedsAPI.update(id, { ...data, images });
       toast.success('Listing updated successfully!');
       navigate(`/classifieds/${id}`);
     } catch (error) {
@@ -129,6 +155,42 @@ const EditClassifiedPage = () => {
         </div>
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+          {/* Photos */}
+          <div className="bg-[#0d1219] border border-[#1c2430] rounded-lg overflow-hidden">
+            <div className="px-4 py-3 border-b border-[#1c2430]">
+              <span className="text-xs uppercase tracking-wider text-[#64748b]">Listing Photo</span>
+            </div>
+            <div className="p-6">
+              {/* Current cover image */}
+              <div className="relative h-44 rounded-lg overflow-hidden border border-[#2a3a4d] mb-4">
+                <img
+                  src={newImagePreview || currentImages[0] || DEFAULT_IMAGE}
+                  alt="Cover"
+                  className="w-full h-full object-cover"
+                />
+                {(newImagePreview || currentImages[0] === DEFAULT_IMAGE) && (
+                  <div className="absolute bottom-2 left-2 px-2 py-0.5 bg-[#0d1219]/80 rounded text-[10px] text-[#64748b]">
+                    {newImagePreview ? 'New photo (not saved yet)' : 'Default Soccer Connect image'}
+                  </div>
+                )}
+                {newImagePreview && (
+                  <button
+                    type="button"
+                    onClick={removeNewImage}
+                    className="absolute top-2 right-2 w-7 h-7 rounded-full bg-[#0d1219]/80 text-white flex items-center justify-center hover:bg-[#ef4444] transition-colors"
+                  >
+                    <FiX size={14} />
+                  </button>
+                )}
+              </div>
+              <label className="flex items-center justify-center gap-2 px-4 py-2.5 border border-dashed border-[#2a3a4d] rounded-lg cursor-pointer hover:border-[#f59e0b]/50 text-[#64748b] hover:text-white transition-colors text-sm">
+                <FiUpload className="w-4 h-4" />
+                {newImagePreview ? 'Change photo' : 'Upload a new photo'}
+                <input type="file" accept="image/*" className="hidden" onChange={handleImageSelect} />
+              </label>
+            </div>
+          </div>
+
           {/* Title */}
           <div className="bg-[#0d1219] border border-[#1c2430] rounded-lg p-6">
             <InputField

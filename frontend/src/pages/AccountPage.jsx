@@ -89,25 +89,6 @@ const InputField = ({ label, icon: Icon, error, ...props }) => (
   </div>
 );
 
-const resizeImageToBase64 = (file, maxSize = 400) =>
-  new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      const img = new Image();
-      img.onload = () => {
-        const canvas = document.createElement('canvas');
-        const ratio = Math.min(maxSize / img.width, maxSize / img.height, 1);
-        canvas.width = img.width * ratio;
-        canvas.height = img.height * ratio;
-        canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
-        resolve(canvas.toDataURL('image/jpeg', 0.85));
-      };
-      img.onerror = reject;
-      img.src = e.target.result;
-    };
-    reader.onerror = reject;
-    reader.readAsDataURL(file);
-  });
 
 const AccountPage = () => {
   const { user, updateUser } = useAuthStore();
@@ -205,16 +186,17 @@ const AccountPage = () => {
       toast.error('Please select an image file');
       return;
     }
-    if (file.size > 5 * 1024 * 1024) {
-      toast.error('Image must be smaller than 5 MB');
+    if (file.size > 10 * 1024 * 1024) {
+      toast.error('Image must be smaller than 10 MB');
       return;
     }
     setIsUploadingAvatar(true);
     try {
-      const base64 = await resizeImageToBase64(file);
-      setAvatarPreview(base64);
+      setAvatarPreview(URL.createObjectURL(file));
+      const { uploadImage } = await import('../api/upload');
+      const url = await uploadImage(file, 'soccer-connect/avatars');
       const { usersAPI } = await import('../api/users');
-      const response = await usersAPI.update(user.id || user._id, { avatar: base64 });
+      const response = await usersAPI.update(user.id || user._id, { avatar: url });
       updateUser(response.data.user);
       toast.success('Profile photo updated!');
     } catch {

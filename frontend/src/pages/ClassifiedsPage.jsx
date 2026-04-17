@@ -60,9 +60,13 @@ const ListingRow = ({ listing }) => {
       to={`/classifieds/${listing.id}`}
       className="group flex items-center gap-4 p-4 bg-[#0d1219] border border-[#1c2430] rounded-xl hover:border-[#2a3a4d] transition-all"
     >
-      {/* Image Placeholder */}
-      <div className="w-16 h-16 bg-[#141c28] border border-[#2a3a4d] rounded-xl flex items-center justify-center flex-shrink-0">
-        <FiTag className="w-7 h-7 text-[#f59e0b]" />
+      {/* Thumbnail */}
+      <div className="w-16 h-16 bg-[#141c28] border border-[#2a3a4d] rounded-xl flex items-center justify-center flex-shrink-0 overflow-hidden">
+        {listing.image ? (
+          <img src={listing.image} alt={listing.title} className="w-full h-full object-cover" />
+        ) : (
+          <FiTag className="w-7 h-7 text-[#f59e0b]" />
+        )}
       </div>
 
       {/* Listing Info */}
@@ -129,8 +133,12 @@ const ListingCard = ({ listing }) => {
       className="group bg-[#0d1219] border border-[#1c2430] rounded-xl overflow-hidden hover:border-[#2a3a4d] transition-all"
     >
       {/* Header */}
-      <div className="relative h-36 bg-gradient-to-br from-[#f59e0b]/10 to-[#141c28] flex items-center justify-center">
-        <FiTag className="w-12 h-12 text-[#f59e0b]/30" />
+      <div className="relative h-36 bg-gradient-to-br from-[#f59e0b]/10 to-[#141c28] flex items-center justify-center overflow-hidden">
+        {listing.image ? (
+          <img src={listing.image} alt={listing.title} className="w-full h-full object-cover" />
+        ) : (
+          <FiTag className="w-12 h-12 text-[#f59e0b]/30" />
+        )}
         <div className={`absolute top-3 left-3 px-3 py-1 rounded-lg ${category.bg}`}>
           <span className={`text-xs font-medium uppercase tracking-wider ${category.text}`}>
             {category.label}

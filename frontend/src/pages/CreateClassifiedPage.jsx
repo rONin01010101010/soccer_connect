@@ -99,8 +99,15 @@ const CreateClassifiedPage = () => {
   const onSubmit = async (data) => {
     setIsSubmitting(true);
     try {
+      let imageUrls = [];
+      if (images.length > 0) {
+        const { uploadImage } = await import('../api/upload');
+        imageUrls = await Promise.all(
+          images.map((img) => uploadImage(img.file, 'soccer-connect/classifieds'))
+        );
+      }
       const { classifiedsAPI } = await import('../api/classifieds');
-      await classifiedsAPI.create(data);
+      await classifiedsAPI.create({ ...data, images: imageUrls });
       toast.success('Listing created successfully!');
       navigate('/classifieds');
     } catch (error) {
