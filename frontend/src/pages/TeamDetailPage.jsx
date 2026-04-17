@@ -416,7 +416,11 @@ const TeamDetailPage = () => {
               <div>
                 <InfoRow label="Home Field" value={team.homeField} />
                 <InfoRow label="Practice" value={team.practiceSchedule} />
-                <InfoRow label="Captain" value={team.captain.name} link={`/players/${team.captain.id}`} />
+                <InfoRow
+                  label="Captain"
+                  value={team.captain?.name || 'N/A'}
+                  link={team.captain?.id ? `/players/${team.captain.id}` : undefined}
+                />
                 <InfoRow label="Total Games" value={totalGames} />
               </div>
             </div>

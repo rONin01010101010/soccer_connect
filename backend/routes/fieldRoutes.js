@@ -40,7 +40,7 @@ router.get('/', paginationValidation, async (req, res, next) => {
     }
 
     if (req.query.search) {
-      filter.$text = { $search: req.query.search };
+      filter.name = { $regex: req.query.search, $options: 'i' };
     }
 
     const fields = await Field.find(filter)
@@ -253,6 +253,69 @@ router.get('/nearby', async (req, res, next) => {
     res.json({
       success: true,
       data: { fields }
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+// @route   POST /api/fields/:id/reviews
+// @desc    Add a review to a field
+// @access  Private
+router.post('/:id/reviews', protect, mongoIdValidation, async (req, res, next) => {
+  try {
+    const { rating, comment } = req.body;
+
+    if (!rating || rating < 1 || rating > 5) {
+      return res.status(400).json({
+        success: false,
+        message: 'Rating must be between 1 and 5'
+      });
+    }
+
+    const field = await Field.findById(req.params.id);
+
+    if (!field) {
+      return res.status(404).json({
+        success: false,
+        message: 'Field not found'
+      });
+    }
+
+    // Prevent duplicate reviews from the same user
+    const alreadyReviewed = field.reviews.some(
+      r => r.user.toString() === req.user._id.toString()
+    );
+
+    if (alreadyReviewed) {
+      return res.status(400).json({
+        success: false,
+        message: 'You have already reviewed this field'
+      });
+    }
+
+    field.reviews.push({
+      user: req.user._id,
+      rating: Number(rating),
+      comment: comment?.trim() || ''
+    });
+
+    // Recalculate average rating
+    const totalRating = field.reviews.reduce((sum, r) => sum + r.rating, 0);
+    field.rating.average = parseFloat((totalRating / field.reviews.length).toFixed(1));
+    field.rating.count = field.reviews.length;
+
+    await field.save();
+
+    const populatedField = await Field.findById(field._id)
+      .populate('reviews.user', 'username first_name last_name avatar');
+
+    const newReview = populatedField.reviews[populatedField.reviews.length - 1];
+
+    res.status(201).json({
+      success: true,
+      message: 'Review added',
+      data: { review: newReview, rating: field.rating }
     });
   } catch (error) {
     next(error);

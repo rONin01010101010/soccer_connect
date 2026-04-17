@@ -29,8 +29,17 @@ router.get('/', protect, paginationValidation, async (req, res, next) => {
       filter.position = req.query.position;
     }
 
+    if (req.query.skill_level) {
+      filter.skill_level = req.query.skill_level;
+    }
+
     if (req.query.search) {
-      filter.$text = { $search: req.query.search };
+      const regex = new RegExp(req.query.search, 'i');
+      filter.$or = [
+        { username: regex },
+        { first_name: regex },
+        { last_name: regex },
+      ];
     }
 
     // Filter by available players (no team) if requested
@@ -78,9 +87,14 @@ router.get('/search', protect, async (req, res, next) => {
       });
     }
 
+    const regex = new RegExp(q, 'i');
     const filter = {
       is_active: true,
-      $text: { $search: q }
+      $or: [
+        { username: regex },
+        { first_name: regex },
+        { last_name: regex },
+      ]
     };
 
     if (position) filter.position = position;
@@ -138,8 +152,8 @@ router.put('/:id', protect, mongoIdValidation, async (req, res, next) => {
 
     // Fields that can be updated
     const allowedFields = [
-      'first_name', 'last_name', 'avatar', 'bio', 'location',
-      'phone', 'position', 'notifications'
+      'first_name', 'last_name', 'username', 'email', 'avatar', 'bio',
+      'location', 'phone', 'position', 'notifications'
     ];
 
     const updates = {};

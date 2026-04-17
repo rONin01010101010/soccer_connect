@@ -427,57 +427,224 @@ const createEvents = async (users, fields) => {
   return Event.insertMany(events);
 };
 
-// Create classifieds - soroush has no listings
+// Create classifieds - comprehensive marketplace seed covering all types
 const createClassifieds = async (users) => {
-  const marcus = users.find(u => u.username === 'marcusj');
-  const sofia = users.find(u => u.username === 'sofiam');
-  const emma = users.find(u => u.username === 'emmaw');
-  const james = users.find(u => u.username === 'jamesw');
+  const marcus  = users.find(u => u.username === 'marcusj');
+  const sofia   = users.find(u => u.username === 'sofiam');
+  const emma    = users.find(u => u.username === 'emmaw');
+  const james   = users.find(u => u.username === 'jamesw');
+  const soroush = users.find(u => u.username === 'soroush');
+  const admin   = users.find(u => u.username === 'admin');
 
   const classifieds = [
+    // ── EQUIPMENT FOR SALE ──────────────────────────────────────────────────
     {
-      title: 'Nike Mercurial Vapor 15 - Size 10',
-      description: 'Barely used Nike Mercurial Vapor 15 Elite boots. Worn only 3 times. Selling because they are too tight for me. Original box included.',
+      title: 'Nike Mercurial Vapor 15 Elite – Size 10',
+      description: 'Barely used Nike Mercurial Vapor 15 Elite boots in excellent condition. Worn only 3 times on natural grass — no turf wear. Comes with original box and extra laces. Selling because they run a half-size small for me. Retail $350, asking $180 OBO.',
       classified_type: 'equipment_sale',
       creator: marcus._id,
       price: 180,
+      condition: 'like-new',
       location: 'Toronto, Ontario',
+      contact_email: 'marcus@test.com',
+      approval_status: 'approved',
       status: 'active'
     },
     {
-      title: 'Looking for Striker - Competitive League',
-      description: 'Our team needs a clinical finisher for the upcoming fall season. Must be available for Tuesday evening games and Sunday morning training.',
+      title: 'Adidas Predator GK Gloves – Size 9',
+      description: 'Adidas Predator Pro goalkeeper gloves. Used for one full season (spring league). Palm grip is still in great shape — just some minor cosmetic wear on the backhand. Size 9, fits most adults. Great for recreational or intermediate keepers.',
+      classified_type: 'equipment_sale',
+      creator: marcus._id,
+      price: 45,
+      condition: 'good',
+      location: 'Toronto, Ontario',
+      contact_email: 'marcus@test.com',
+      approval_status: 'approved',
+      status: 'active'
+    },
+    {
+      title: 'Puma Future 7 Cleats – Size 11 (Turf)',
+      description: 'Puma Future 7 Play TT turf cleats, size 11. Bought for indoor but switched to another pair. Only worn twice indoors. No sign of wear on the studs. Comes in original box.',
+      classified_type: 'equipment_sale',
+      creator: james._id,
+      price: 65,
+      condition: 'like-new',
+      location: 'Vaughan, Ontario',
+      contact_email: 'jamesw@test.com',
+      approval_status: 'approved',
+      status: 'active'
+    },
+    {
+      title: 'Full Goalkeeper Kit – Shirt, Shorts, Socks (M)',
+      description: 'Complete goalkeeper kit in medium. Includes padded GK shirt, padded shorts, and grip socks. All from the same brand, washed and in excellent condition. Selling as a bundle only — great deal for a keeper just starting out.',
+      classified_type: 'equipment_sale',
+      creator: sofia._id,
+      price: 55,
+      condition: 'good',
+      location: 'Mississauga, Ontario',
+      contact_email: 'sofia@test.com',
+      approval_status: 'approved',
+      status: 'active'
+    },
+    {
+      title: 'Match Balls x5 – Nike Flight (Used)',
+      description: 'Five Nike Flight match balls. Used across two seasons of competitive league play. All hold air well and have no major scuffs. Perfect for training, pickup games, or keeping a few spares. Selling as a set.',
+      classified_type: 'equipment_sale',
+      creator: james._id,
+      price: 80,
+      condition: 'fair',
+      location: 'Vaughan, Ontario',
+      approval_status: 'approved',
+      status: 'active'
+    },
+    {
+      title: 'FREE – Soccer Cones & Training Ladder',
+      description: 'Giving away a set of 20 disc cones (orange) and a 6-metre agility ladder. Both used but fully functional — great for individual training or coaching youth sessions. Pick up only from Vaughan area.',
+      classified_type: 'equipment_sale',
+      creator: james._id,
+      price: 0,
+      condition: 'fair',
+      location: 'Vaughan, Ontario',
+      approval_status: 'approved',
+      status: 'active'
+    },
+
+    // ── EQUIPMENT WANTED ────────────────────────────────────────────────────
+    {
+      title: 'WTB: Size 8 GK Gloves – Any Brand',
+      description: 'Looking for goalkeeper gloves in size 8, any condition as long as the palms are intact. Just need something affordable for training sessions. Happy to pay up to $25. Can pick up anywhere in the GTA.',
+      classified_type: 'equipment_wanted',
+      creator: soroush._id,
+      location: 'North York, Ontario',
+      contact_email: 'soroush.salari2023@gmail.com',
+      approval_status: 'approved',
+      status: 'active'
+    },
+    {
+      title: 'Wanted: Full-Size Training Goal (Portable)',
+      description: 'Looking to buy a portable full-size (8x24) or 7-aside training goal for backyard use. Needs to fold flat for storage. Willing to pay $80–$150 depending on condition. DM with photos.',
+      classified_type: 'equipment_wanted',
+      creator: emma._id,
+      location: 'Brampton, Ontario',
+      approval_status: 'approved',
+      status: 'active'
+    },
+
+    // ── LOOKING FOR PLAYERS ─────────────────────────────────────────────────
+    {
+      title: 'Competitive Team Seeking Striker – Fall Season',
+      description: 'We are a competitive-level 11-aside team (Toronto Sunday League, Division 2) looking for a clinical striker ahead of the fall season. Must be available Sunday mornings 9–11 AM and Tuesday evening training 7–9 PM. Experience in league play required. Trial match before signing — contact us to arrange.',
       classified_type: 'looking_for_players',
       creator: sofia._id,
       location: 'Mississauga, Ontario',
       position_needed: 'forward',
       skill_level: 'competitive',
+      contact_email: 'sofia@test.com',
+      approval_status: 'approved',
       status: 'active'
     },
     {
-      title: 'Free Soccer Balls - Used but Good Condition',
-      description: 'Giving away 5 match balls. Some wear but still perfectly usable for training.',
-      classified_type: 'equipment_sale',
-      creator: james._id,
-      price: 0,
-      location: 'Vaughan, Ontario',
+      title: 'Recreational 5-aside Team Looking for a Goalkeeper',
+      description: 'Our Friday night indoor 5-aside team is missing a keeper. We play at Chinguacousy Rec Centre in Brampton, every Friday 8–9 PM. Totally casual — just here for fun and a bit of exercise. All skill levels welcome, no experience necessary.',
+      classified_type: 'looking_for_players',
+      creator: emma._id,
+      location: 'Brampton, Ontario',
+      position_needed: 'goalkeeper',
+      skill_level: 'beginner',
+      contact_email: 'emma@test.com',
+      approval_status: 'approved',
       status: 'active'
     },
     {
-      title: 'Looking for a Team - Recreational Level',
-      description: "Hi! I'm new to the area and looking for a friendly team to join. I play defender but can fill in anywhere. Available weekends.",
+      title: 'Intermediate 7-aside – Need CB and Midfielder',
+      description: 'Looking for two players to complete our summer roster: one central defender and one box-to-box midfielder. We play Saturday afternoons at Downsview Park. Intermediate level, mix of ages 20–40. Friendly atmosphere but we do take results seriously. Message us for a trial session.',
+      classified_type: 'looking_for_players',
+      creator: marcus._id,
+      location: 'North York, Ontario',
+      position_needed: 'defender',
+      skill_level: 'intermediate',
+      contact_email: 'marcus@test.com',
+      approval_status: 'approved',
+      status: 'active'
+    },
+
+    // ── LOOKING FOR TEAM ────────────────────────────────────────────────────
+    {
+      title: 'Midfielder Looking for Recreational Team – Weekends',
+      description: "Hi! I'm Soroush, 28M, central or attacking midfielder with about 8 years of casual play. Just moved to North York and looking for a weekend team. Not looking for anything super competitive — just want to enjoy the game and meet people. Available Saturdays and Sundays.",
+      classified_type: 'looking_for_team',
+      creator: soroush._id,
+      location: 'North York, Ontario',
+      skill_level: 'intermediate',
+      contact_email: 'soroush.salari2023@gmail.com',
+      approval_status: 'approved',
+      status: 'active'
+    },
+    {
+      title: 'Defender Looking for Competitive 11-aside League',
+      description: "Experienced CB, 31M, played in Toronto District Amateur Soccer League for 4 seasons. Looking for a competitive team ahead of the fall registration. Strong in the air, good 1v1 defender. Can also play fullback. Available any day after 6 PM.",
       classified_type: 'looking_for_team',
       creator: emma._id,
       location: 'Brampton, Ontario',
+      skill_level: 'competitive',
+      approval_status: 'approved',
+      status: 'active'
+    },
+
+    // ── COACHING ────────────────────────────────────────────────────────────
+    {
+      title: 'UEFA B License Coach – 1-on-1 & Small Group Sessions',
+      description: 'Professional coach with UEFA B license and 10+ years working with youth academies and adult recreational teams. Offering individual technical sessions (first touch, shooting, 1v1), positional coaching, and small group (2–4 players) tactical sessions. Sessions held at Centennial Park or by request. 60 min: $75 | 90 min: $100 | Package of 5 sessions: $320.',
+      classified_type: 'coaching',
+      creator: admin._id,
+      price: 75,
+      location: 'Etobicoke, Ontario',
+      contact_email: 'admin@soccerconnect.com',
+      approval_status: 'approved',
       status: 'active'
     },
     {
-      title: 'Goalkeeper Gloves - Adidas Predator',
-      description: 'Size 9 goalkeeper gloves. Great grip, used for one season. Minor palm wear.',
-      classified_type: 'equipment_sale',
+      title: 'Youth Goalkeeper Coaching – Ages 8–16',
+      description: 'Goalkeeper-specific training for youth players ages 8–16. Former semi-pro keeper with 5 years of coaching experience. Focus areas: positioning, shot-stopping fundamentals, distribution, and dealing with crosses. Sessions are 45–60 minutes at Vaughan Soccer Centre turf fields. $60/session or $200 for a 4-session block. Limited spots available.',
+      classified_type: 'coaching',
+      creator: james._id,
+      price: 60,
+      location: 'Vaughan, Ontario',
+      contact_email: 'jamesw@test.com',
+      approval_status: 'approved',
+      status: 'active'
+    },
+
+    // ── OTHER ────────────────────────────────────────────────────────────────
+    {
+      title: 'Looking for Pickup Game Partners – Weekday Mornings',
+      description: "I play casual pickup 3–4 days a week (Mon/Wed/Fri mornings, roughly 7–9 AM) at Eglinton Flats and I'm always looking for more players to join. No commitment, just show up when you can. All positions and skill levels welcome — we usually get 8–12 players. Message me to be added to the WhatsApp group.",
+      classified_type: 'other',
       creator: marcus._id,
-      price: 45,
-      location: 'Toronto, Ontario',
+      location: 'Etobicoke, Ontario',
+      approval_status: 'approved',
+      status: 'active'
+    },
+    {
+      title: 'Soccer Carpool – Mississauga to Vaughan (Saturday AM)',
+      description: "Looking for 1–2 people who need a ride from central Mississauga to Vaughan Soccer Centre on Saturday mornings. I leave around 7:45 AM and return around 12:30 PM. Happy to split gas. Good way to meet teammates too — I play for the Vaughan Wolves.",
+      classified_type: 'other',
+      creator: sofia._id,
+      location: 'Mississauga, Ontario',
+      approval_status: 'approved',
+      status: 'active'
+    },
+
+    // ── PENDING (admin approval queue) ──────────────────────────────────────
+    {
+      title: 'Adidas X Speedportal Boots – Size 9.5 (Pending Review)',
+      description: 'Lightly used Adidas X Speedportal.1 FG boots in solar red/yellow colourway. Size 9.5. Worn for half a season, studs in great shape. Selling because I moved to turf exclusively. Asking $120.',
+      classified_type: 'equipment_sale',
+      creator: soroush._id,
+      price: 120,
+      condition: 'good',
+      location: 'North York, Ontario',
+      approval_status: 'pending',
       status: 'active'
     }
   ];

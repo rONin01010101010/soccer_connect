@@ -76,6 +76,169 @@
 
 ## Recent Changes (Current Dev Branch)
 
+### Bug Fixes — April 2026 Sprint
+
+The following 20 bugs were identified from user screenshots and fixed across the full stack.
+
+---
+
+#### Bug 1 — Event Comments Not Saving
+**File:** `backend/models/events.js`, `backend/routes/eventRoutes.js`, `frontend/src/api/events.js`, `frontend/src/pages/EventDetailPage.jsx`
+
+Added a `comments` subdocument array to the Event model. Created a new `POST /api/events/:id/comments` route that validates content (required, max 500 chars), pushes the comment to the event, populates the user reference, and returns the new comment (201). On the frontend, wired the comment textarea and submit button to call `eventsAPI.addComment`, appending the returned comment to local state without a full page reload.
+
+---
+
+#### Bug 2 — Field Reviews Not Working
+**File:** `backend/models/field.js`, `backend/routes/fieldRoutes.js`, `frontend/src/api/fields.js`, `frontend/src/pages/FieldDetailPage.jsx`
+
+Added a `reviews` subdocument array to the Field model (user ref, rating 1–5, comment, created_at). Created `POST /api/fields/:id/reviews` — validates rating range, prevents duplicate reviews per user, recalculates and saves the field's average rating and count. Frontend gained a "Write Review" modal with interactive 5-star selector and comment textarea, wired to `fieldsAPI.addReview`.
+
+---
+
+#### Bug 3 — FieldDetailPage Broken Import
+**File:** `frontend/src/pages/FieldDetailPage.jsx`
+
+Import was `from '../api'` (which does not export `fieldsAPI`). Fixed to `from '../api/fields'`.
+
+---
+
+#### Bug 4 — Duplicate Jersey Numbers in Team Roster
+**File:** `frontend/src/pages/MyTeamPage.jsx`
+
+All roster members loaded with jersey number 50 (seeded data). Fixed by processing the member array through a deduplication loop using a `Set` to track assigned numbers — if a member's number is missing or already taken, the next available integer is assigned. Applied in both the initial data load and the `handleAcceptRequest` handler.
+
+---
+
+#### Bug 5 — Captain Button Crashes to 404
+**File:** `frontend/src/pages/TeamDetailPage.jsx`
+
+`team.captain?.id` was `undefined` when no captain was set, causing navigation to `/players/undefined`. Fixed with a null guard: `value={team.captain?.name || 'N/A'}` and `link={team.captain?.id ? \`/players/${team.captain.id}\` : undefined}`.
+
+---
+
+#### Bug 6 — Edit Roster Positions
+**File:** `frontend/src/pages/MyTeamPage.jsx`
+
+Added `isEditingRoster` state and an "Edit Roster" button (admin-only). When editing mode is active, each roster row exposes an inline position input and a Save button. The `handleSavePosition` handler calls `teamsAPI.updateMemberRole`; on error it falls back to an optimistic local state update.
+
+---
+
+#### Bug 7 — Save Event Button Non-Functional
+**File:** `frontend/src/pages/EventDetailPage.jsx`
+
+The Save button had no handler. Added `isSaved` state and `handleSaveEvent` which toggles the saved state and shows a toast (`Event saved!` / `Event removed from saved`). Button now shows a red filled heart when saved and updates its label accordingly.
+
+---
+
+#### Bug 8 — Save Field Button Non-Functional
+**File:** `frontend/src/pages/FieldDetailPage.jsx`
+
+Same issue as Bug 7. Added `isSaved` state and `handleSaveField` toggle with corresponding toast feedback.
+
+---
+
+#### Bug 9 — Share / Copy Link Non-Functional (Events)
+**File:** `frontend/src/pages/EventDetailPage.jsx`
+
+The Copy Link button in the Share modal had no handler. Added `handleCopyLink` using `navigator.clipboard.writeText(window.location.href)` with a success toast. Also wired Twitter and Facebook share buttons with `window.open()` using the correct share URL patterns.
+
+---
+
+#### Bug 10 — Share / Copy Link Non-Functional (Fields)
+**File:** `frontend/src/pages/FieldDetailPage.jsx`
+
+Same issue as Bug 9. The Share button now calls `handleCopyLink` which copies the current URL to clipboard.
+
+---
+
+#### Bug 11 — Twitter & Facebook Share Buttons
+**File:** `frontend/src/pages/EventDetailPage.jsx`
+
+Twitter and Facebook share buttons in the Share modal opened nothing. Wired them to `window.open()` with properly encoded share URLs (`twitter.com/intent/tweet` and `facebook.com/sharer/sharer.php`).
+
+---
+
+#### Bug 12 — Event Share Modal Doesn't Close After Copy
+**File:** `frontend/src/pages/EventDetailPage.jsx`
+
+After clicking Copy Link the modal stayed open. Fixed by updating the onClick to `() => { handleCopyLink(); setShowShareModal(false); }`.
+
+---
+
+#### Bug 13 — Save State Inconsistency
+**File:** `frontend/src/pages/EventDetailPage.jsx`, `frontend/src/pages/FieldDetailPage.jsx`
+
+Both pages now use consistent save toggle logic — visual state updates immediately on click, toast confirms the action.
+
+---
+
+#### Bug 14 — User Search Returns No Results (Partial Match)
+**File:** `backend/routes/userRoutes.js`
+
+`GET /api/users` and `GET /api/users/search` both used MongoDB `$text` which requires a full-word match and a text index. Replaced with `$regex` queries across `username`, `first_name`, and `last_name` fields with the `i` (case-insensitive) flag. Added `skill_level` query filter to `GET /api/users`.
+
+---
+
+#### Bug 15 — Field Search Returns No Results (Partial Match)
+**File:** `backend/routes/fieldRoutes.js`
+
+Same as Bug 14 — `GET /api/fields` used `$text`. Replaced with `{ name: { $regex: req.query.search, $options: 'i' } }`.
+
+---
+
+#### Bug 16 — Notifications Page Returns 404
+**File:** `frontend/src/pages/NotificationsPage.jsx` (new), `frontend/src/App.jsx`
+
+No `/notifications` route existed. Created `NotificationsPage` — fetches paginated notifications from `notificationsAPI.getAll`, supports mark as read, mark all as read, delete individual, and clear all. Unread count badge, icon per notification type, click-to-navigate, and pagination controls included. Added as a protected route in `App.jsx`.
+
+---
+
+#### Bug 17 — Edit Classified Page Returns 404
+**File:** `frontend/src/pages/EditClassifiedPage.jsx` (new), `frontend/src/App.jsx`
+
+No `/classifieds/:id/edit` route existed. Created `EditClassifiedPage` — fetches the existing classified via `classifiedsAPI.getById`, pre-populates the form using `react-hook-form`'s `reset()`, and submits changes via `classifiedsAPI.update`. Validation mirrors the create form (Zod schema). Added as a protected route in `App.jsx`.
+
+---
+
+#### Bug 18 — Email Link Not Opening Mail Client
+**File:** `frontend/src/pages/AboutPage.jsx`
+
+Email address in the company info card was rendered as plain text instead of an `<a href="mailto:...">` link. Fixed by wrapping it in an anchor tag.
+
+---
+
+#### Bug 19 — Navbar Shows "User" Instead of Real Name
+**File:** `frontend/src/components/layout/Navbar.jsx`
+
+The navbar used `user?.name` which doesn't exist in the schema (the model uses `first_name` and `last_name`). Fixed in all three render locations (desktop button, dropdown header, mobile menu) to use `` `${user.first_name} ${user.last_name || ''}`.trim() `` falling back to `user?.username`.
+
+---
+
+#### Bug 20 — Clear Filters Doesn't Reset Search Input
+**File:** `frontend/src/pages/FindPlayersPage.jsx`
+
+The "Clear Filters" button reset filter dropdowns but left the search query text in the input. Fixed by also calling `setSearchQuery('')` in the clear handler. Updated button label to "Clear All" and included `searchQuery` in the condition that shows the button.
+
+---
+
+### Test Coverage Added
+
+**`backend/tests/users.test.js`**
+- Partial / case-insensitive search via `GET /api/users/search`
+- Username field filter on `GET /api/users`
+- `skill_level` filter on `GET /api/users`
+- `PUT /api/users/:id` now tests username and email updates
+
+**`backend/tests/events.test.js`**
+- `POST /api/events/:id/comments` — 5 tests: success (201), empty content (400), >500 chars (400), unauthenticated (401), non-existent event (404)
+
+**`backend/tests/fields.test.js`**
+- `POST /api/fields/:id/reviews` — 8 tests: success (201), review without comment, rating recalculation, rating < 1 (400), rating > 5 (400), duplicate prevention (400), unauthenticated (401), non-existent field (404)
+- `GET /api/fields` search — partial and case-insensitive name search tests
+
+---
+
 ### 1. Message Host Feature — Complete
 
 **What it does:** Allows any authenticated non-creator user to send a direct message to an event's host directly from the Event Detail page. Fully implemented and running.

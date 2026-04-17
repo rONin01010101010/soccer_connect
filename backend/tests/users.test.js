@@ -106,7 +106,7 @@ describe('User Routes', () => {
       });
     });
 
-    it('should search users by query', async () => {
+    it('should search users by exact first name', async () => {
       const res = await request(app)
         .get('/api/users/search')
         .set('Authorization', `Bearer ${token}`)
@@ -115,6 +115,27 @@ describe('User Routes', () => {
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);
       expect(res.body.data.users).toBeDefined();
+      expect(res.body.data.users.some(u => u.first_name === 'John')).toBe(true);
+    });
+
+    it('should support partial / case-insensitive search', async () => {
+      const res = await request(app)
+        .get('/api/users/search')
+        .set('Authorization', `Bearer ${token}`)
+        .query({ q: 'joh' });
+
+      expect(res.status).toBe(200);
+      expect(res.body.data.users.some(u => u.first_name === 'John')).toBe(true);
+    });
+
+    it('should search by username', async () => {
+      const res = await request(app)
+        .get('/api/users/search')
+        .set('Authorization', `Bearer ${token}`)
+        .query({ q: 'midfielder' });
+
+      expect(res.status).toBe(200);
+      expect(res.body.data.users.some(u => u.username === 'midfielder_john')).toBe(true);
     });
 
     it('should fail without search query', async () => {
@@ -124,6 +145,37 @@ describe('User Routes', () => {
 
       expect(res.status).toBe(400);
       expect(res.body.message).toContain('Search query');
+    });
+  });
+
+  describe('GET /api/users (search filter)', () => {
+    beforeEach(async () => {
+      await registerUser({
+        username: 'partialtest',
+        email: 'partial@example.com',
+        first_name: 'Partial',
+        last_name: 'Tester',
+      });
+    });
+
+    it('should filter users by partial search term', async () => {
+      const res = await request(app)
+        .get('/api/users')
+        .set('Authorization', `Bearer ${token}`)
+        .query({ search: 'partial' });
+
+      expect(res.status).toBe(200);
+      expect(res.body.data.users.some(u => u.username === 'partialtest')).toBe(true);
+    });
+
+    it('should filter users by skill_level', async () => {
+      const res = await request(app)
+        .get('/api/users')
+        .set('Authorization', `Bearer ${token}`)
+        .query({ skill_level: 'recreational' });
+
+      expect(res.status).toBe(200);
+      expect(res.body.success).toBe(true);
     });
   });
 
@@ -167,6 +219,26 @@ describe('User Routes', () => {
       expect(res.body.success).toBe(true);
       expect(res.body.data.user.bio).toBe('I love soccer!');
       expect(res.body.data.user.location).toBe('Toronto');
+    });
+
+    it('should update username', async () => {
+      const res = await request(app)
+        .put(`/api/users/${userId}`)
+        .set('Authorization', `Bearer ${token}`)
+        .send({ username: 'updatedusername' });
+
+      expect(res.status).toBe(200);
+      expect(res.body.data.user.username).toBe('updatedusername');
+    });
+
+    it('should update email', async () => {
+      const res = await request(app)
+        .put(`/api/users/${userId}`)
+        .set('Authorization', `Bearer ${token}`)
+        .send({ email: 'newemail@example.com' });
+
+      expect(res.status).toBe(200);
+      expect(res.body.data.user.email).toBe('newemail@example.com');
     });
 
     it('should fail to update another user profile', async () => {

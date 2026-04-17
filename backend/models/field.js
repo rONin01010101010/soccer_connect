@@ -88,6 +88,28 @@ const fieldSchema = new mongoose.Schema({
     average: { type: Number, default: 0, min: 0, max: 5 },
     count: { type: Number, default: 0 }
   },
+  reviews: [{
+    user: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User',
+      required: true
+    },
+    rating: {
+      type: Number,
+      required: true,
+      min: 1,
+      max: 5
+    },
+    comment: {
+      type: String,
+      maxlength: [1000, 'Review cannot exceed 1000 characters'],
+      default: ''
+    },
+    created_at: {
+      type: Date,
+      default: Date.now
+    }
+  }],
   is_active: {
     type: Boolean,
     default: true

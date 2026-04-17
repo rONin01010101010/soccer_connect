@@ -66,4 +66,9 @@ export const eventsAPI = {
     const response = await api.post(`/events/${id}/message`, { content });
     return response.data;
   },
+
+  addComment: async (id, content) => {
+    const response = await api.post(`/events/${id}/comments`, { content });
+    return response.data;
+  },
 };

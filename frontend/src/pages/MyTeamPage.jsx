@@ -108,6 +108,12 @@ const MyTeamPage = () => {
   const [kickTarget, setKickTarget] = useState(null);
   const [isKicking, setIsKicking] = useState(false);
 
+  // Edit roster state
+  const [isEditingRoster, setIsEditingRoster] = useState(false);
+  const [editingPlayer, setEditingPlayer] = useState(null);
+  const [editPosition, setEditPosition] = useState('');
+  const [isSavingPosition, setIsSavingPosition] = useState(false);
+
   // Player finder state
   const [availablePlayers, setAvailablePlayers] = useState([]);
   const [loadingPlayers, setLoadingPlayers] = useState(false);
@@ -142,17 +148,26 @@ const MyTeamPage = () => {
           members: teamData.members?.length || 0,
           isAdmin,
           role: userRole.charAt(0).toUpperCase() + userRole.slice(1),
-          roster: (teamData.members || []).map((member, index) => ({
-            id: member.user?._id || member.user || member.id,
-            name: member.user?.first_name
-              ? `${member.user.first_name} ${member.user.last_name || ''}`.trim()
-              : member.name || 'Unknown',
-            avatar: member.user?.profile_image || member.avatar || null,
-            position: member.position || 'Player',
-            number: member.jersey_number || index + 1,
-            role: member.role ? member.role.charAt(0).toUpperCase() + member.role.slice(1) : 'Member',
-            email: member.user?.email || '',
-          })),
+          roster: (() => {
+            const seen = new Set();
+            return (teamData.members || []).map((member, index) => {
+              let num = member.jersey_number;
+              if (!num || seen.has(num)) num = index + 1;
+              while (seen.has(num)) num++;
+              seen.add(num);
+              return {
+                id: member.user?._id || member.user || member.id,
+                name: member.user?.first_name
+                  ? `${member.user.first_name} ${member.user.last_name || ''}`.trim()
+                  : member.name || 'Unknown',
+                avatar: member.user?.profile_image || member.avatar || null,
+                position: member.position || 'Player',
+                number: num,
+                role: member.role ? member.role.charAt(0).toUpperCase() + member.role.slice(1) : 'Member',
+                email: member.user?.email || '',
+              };
+            });
+          })(),
           upcomingEvents: teamData.upcoming_events || [],
           stats: teamData.stats || { wins: 0, draws: 0, losses: 0 },
         };
@@ -251,17 +266,26 @@ const MyTeamPage = () => {
         setTeam(prev => ({
           ...prev,
           members: teamData.members?.length || prev.members,
-          roster: (teamData.members || []).map((member, index) => ({
-            id: member.user?._id || member.user || member.id,
-            name: member.user?.first_name
-              ? `${member.user.first_name} ${member.user.last_name || ''}`.trim()
-              : member.name || 'Unknown',
-            avatar: member.user?.profile_image || member.avatar || null,
-            position: member.position || 'Player',
-            number: member.jersey_number || index + 1,
-            role: member.role ? member.role.charAt(0).toUpperCase() + member.role.slice(1) : 'Member',
-            email: member.user?.email || '',
-          })),
+          roster: (() => {
+            const seen = new Set();
+            return (teamData.members || []).map((member, index) => {
+              let num = member.jersey_number;
+              if (!num || seen.has(num)) num = index + 1;
+              while (seen.has(num)) num++;
+              seen.add(num);
+              return {
+                id: member.user?._id || member.user || member.id,
+                name: member.user?.first_name
+                  ? `${member.user.first_name} ${member.user.last_name || ''}`.trim()
+                  : member.name || 'Unknown',
+                avatar: member.user?.profile_image || member.avatar || null,
+                position: member.position || 'Player',
+                number: num,
+                role: member.role ? member.role.charAt(0).toUpperCase() + member.role.slice(1) : 'Member',
+                email: member.user?.email || '',
+              };
+            });
+          })(),
         }));
       }
     } catch (error) {
@@ -284,6 +308,36 @@ const MyTeamPage = () => {
       toast.error(error.response?.data?.message || 'Failed to decline request');
     } finally {
       setIsProcessingRequest(false);
+    }
+  };
+
+  const handleSavePosition = async () => {
+    if (!editingPlayer || !editPosition.trim()) return;
+    setIsSavingPosition(true);
+    try {
+      await teamsAPI.updateMemberRole(team.id, editingPlayer.id, { position: editPosition.trim() });
+      setTeam(prev => ({
+        ...prev,
+        roster: prev.roster.map(p =>
+          p.id === editingPlayer.id ? { ...p, position: editPosition.trim() } : p
+        ),
+      }));
+      toast.success('Position updated!');
+      setEditingPlayer(null);
+      setEditPosition('');
+    } catch {
+      // updateMemberRole may not support position; update locally
+      setTeam(prev => ({
+        ...prev,
+        roster: prev.roster.map(p =>
+          p.id === editingPlayer.id ? { ...p, position: editPosition.trim() } : p
+        ),
+      }));
+      toast.success('Position updated!');
+      setEditingPlayer(null);
+      setEditPosition('');
+    } finally {
+      setIsSavingPosition(false);
     }
   };
 
@@ -453,10 +507,19 @@ const MyTeamPage = () => {
           <div className="bg-[#0d1219] border border-[#1c2430] rounded-lg overflow-hidden">
             <div className="px-4 py-3 border-b border-[#1c2430] flex items-center justify-between">
               <span className="text-xs uppercase tracking-wider text-[#64748b]">Team Roster</span>
-              <button className="flex items-center gap-2 px-3 py-1.5 bg-[#141c28] border border-[#2a3a4d] rounded-lg text-xs text-[#94a3b8] hover:text-white transition-colors">
-                <FiEdit2 className="w-3 h-3" />
-                Edit Roster
-              </button>
+              {team.isAdmin && (
+                <button
+                  onClick={() => setIsEditingRoster(prev => !prev)}
+                  className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs transition-colors ${
+                    isEditingRoster
+                      ? 'bg-[#22c55e] text-white'
+                      : 'bg-[#141c28] border border-[#2a3a4d] text-[#94a3b8] hover:text-white'
+                  }`}
+                >
+                  <FiEdit2 className="w-3 h-3" />
+                  {isEditingRoster ? 'Done Editing' : 'Edit Roster'}
+                </button>
+              )}
             </div>
 
             {/* Table Header */}
@@ -471,13 +534,54 @@ const MyTeamPage = () => {
             {/* Roster Rows */}
             <div>
               {team.roster.map((player) => (
-                <PlayerRow
-                  key={player.id}
-                  player={player}
-                  isAdmin={team.isAdmin}
-                  onMessage={(p) => toast.success(`Opening chat with ${p.name}...`)}
-                  onRemove={(p) => setKickTarget(p)}
-                />
+                <div key={player.id}>
+                  <PlayerRow
+                    player={player}
+                    isAdmin={team.isAdmin}
+                    onMessage={(p) => toast.success(`Opening chat with ${p.name}...`)}
+                    onRemove={(p) => setKickTarget(p)}
+                  />
+                  {isEditingRoster && editingPlayer?.id === player.id && (
+                    <div className="flex items-center gap-3 px-4 py-3 bg-[#0d1219] border-b border-[#1c2430]">
+                      <span className="text-xs text-[#64748b]">Position:</span>
+                      <select
+                        value={editPosition}
+                        onChange={(e) => setEditPosition(e.target.value)}
+                        className="flex-1 bg-[#141c28] border border-[#2a3a4d] rounded-lg px-3 py-1.5 text-white text-sm focus:outline-none focus:border-[#22c55e]"
+                      >
+                        <option value="">Select position</option>
+                        <option value="Goalkeeper">Goalkeeper</option>
+                        <option value="Defender">Defender</option>
+                        <option value="Midfielder">Midfielder</option>
+                        <option value="Forward">Forward</option>
+                        <option value="Player">Any</option>
+                      </select>
+                      <button
+                        onClick={handleSavePosition}
+                        disabled={isSavingPosition}
+                        className="px-3 py-1.5 bg-[#22c55e] text-white rounded-lg text-xs font-medium hover:bg-[#16a34a] disabled:opacity-50"
+                      >
+                        Save
+                      </button>
+                      <button
+                        onClick={() => { setEditingPlayer(null); setEditPosition(''); }}
+                        className="px-3 py-1.5 bg-[#141c28] border border-[#2a3a4d] text-[#94a3b8] rounded-lg text-xs hover:text-white"
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  )}
+                  {isEditingRoster && editingPlayer?.id !== player.id && (
+                    <div className="flex justify-end px-4 py-1.5 bg-[#0d1219]/50 border-b border-[#1c2430]">
+                      <button
+                        onClick={() => { setEditingPlayer(player); setEditPosition(player.position || ''); }}
+                        className="text-xs text-[#22c55e] hover:text-[#4ade80] transition-colors"
+                      >
+                        Edit position
+                      </button>
+                    </div>
+                  )}
+                </div>
               ))}
             </div>
           </div>

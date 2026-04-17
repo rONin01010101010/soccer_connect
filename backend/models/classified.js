@@ -44,6 +44,11 @@ const classifiedSchema = new mongoose.Schema({
   contact_phone: {
     type: String
   },
+  condition: {
+    type: String,
+    enum: ['new', 'like-new', 'good', 'fair', ''],
+    default: ''
+  },
   position_needed: {
     type: String,
     enum: ['goalkeeper', 'defender', 'midfielder', 'forward', 'any', ''],

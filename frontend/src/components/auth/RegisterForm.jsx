@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -14,9 +14,31 @@ import {
   FiMapPin,
   FiPhone,
   FiCalendar,
+  FiCamera,
+  FiUpload,
 } from 'react-icons/fi';
 import { GiSoccerBall } from 'react-icons/gi';
 import useAuthStore from '../../store/authStore';
+
+const resizeImageToBase64 = (file, maxSize = 400) =>
+  new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        const ratio = Math.min(maxSize / img.width, maxSize / img.height, 1);
+        canvas.width = img.width * ratio;
+        canvas.height = img.height * ratio;
+        canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
+        resolve(canvas.toDataURL('image/jpeg', 0.85));
+      };
+      img.onerror = reject;
+      img.src = e.target.result;
+    };
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
 
 // Calculate minimum date (must be at least 5 years old to register)
 const getMaxDate = () => {
@@ -72,6 +94,7 @@ const steps = [
   { id: 1, title: 'Account', description: 'Basic info' },
   { id: 2, title: 'Profile', description: 'Your details' },
   { id: 3, title: 'Security', description: 'Set password' },
+  { id: 4, title: 'Photo', description: 'Profile picture' },
 ];
 
 const FormInput = ({ label, icon: Icon, error, helperText, ...props }) => (
@@ -96,7 +119,12 @@ const FormInput = ({ label, icon: Icon, error, helperText, ...props }) => (
 const RegisterForm = () => {
   const [currentStep, setCurrentStep] = useState(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const { register: registerUser } = useAuthStore();
+  const [registeredUser, setRegisteredUser] = useState(null);
+  const [avatarPreview, setAvatarPreview] = useState(null);
+  const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
+  const [isDragging, setIsDragging] = useState(false);
+  const fileInputRef = useRef(null);
+  const { register: registerUser, updateUser } = useAuthStore();
   const navigate = useNavigate();
 
   const {
@@ -149,14 +177,58 @@ const RegisterForm = () => {
   const onSubmit = async (data) => {
     setIsSubmitting(true);
     try {
-      const { confirmPassword: _confirmPassword, agreeToTerms: _agreeToTerms, ageConsent: _ageConsent, ...userData } = data;
-      await registerUser(userData);
-      toast.success('Welcome to SoccerConnect!');
-      navigate('/dashboard');
+      const { confirmPassword: _c, agreeToTerms: _a, ageConsent: _ac, ...userData } = data;
+      const result = await registerUser(userData);
+      setRegisteredUser(result);
+      toast.success('Account created! Add a profile photo.');
+      setCurrentStep(4);
     } catch (error) {
       toast.error(error.response?.data?.message || 'Registration failed');
     } finally {
       setIsSubmitting(false);
+    }
+  };
+
+  const handlePhotoFile = async (file) => {
+    if (!file?.type.startsWith('image/')) {
+      toast.error('Please select an image file');
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error('Image must be smaller than 5 MB');
+      return;
+    }
+    setIsUploadingAvatar(true);
+    try {
+      const base64 = await resizeImageToBase64(file);
+      setAvatarPreview(base64);
+    } finally {
+      setIsUploadingAvatar(false);
+    }
+  };
+
+  const handleDrop = (e) => {
+    e.preventDefault();
+    setIsDragging(false);
+    handlePhotoFile(e.dataTransfer.files?.[0]);
+  };
+
+  const handleUploadAndContinue = async () => {
+    if (!avatarPreview) { navigate('/dashboard'); return; }
+    setIsUploadingAvatar(true);
+    try {
+      const userId = registeredUser?.data?.user?.id || registeredUser?.user?.id || registeredUser?.id;
+      if (userId) {
+        const { usersAPI } = await import('../../api/users');
+        const response = await usersAPI.update(userId, { avatar: avatarPreview });
+        updateUser(response.data.user);
+      }
+      toast.success('Profile photo saved!');
+    } catch {
+      toast.error('Photo save failed, but your account is ready!');
+    } finally {
+      setIsUploadingAvatar(false);
+      navigate('/dashboard');
     }
   };
 
@@ -165,13 +237,19 @@ const RegisterForm = () => {
       {/* Header */}
       <div className="text-center mb-8">
         <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-[#1a5f2a] mb-6">
-          <GiSoccerBall className="w-8 h-8 text-[#4ade80]" />
+          {currentStep === 4 ? (
+            <FiCamera className="w-8 h-8 text-[#4ade80]" />
+          ) : (
+            <GiSoccerBall className="w-8 h-8 text-[#4ade80]" />
+          )}
         </div>
         <h1 className="text-2xl font-bold text-white mb-2">
-          Join SoccerConnect
+          {currentStep === 4 ? 'Add a Profile Photo' : 'Join SoccerConnect'}
         </h1>
         <p className="text-[#64748b]">
-          Create your account and start playing
+          {currentStep === 4
+            ? 'Help other players recognise you — you can always change it later'
+            : 'Create your account and start playing'}
         </p>
       </div>
 
@@ -372,7 +450,86 @@ const RegisterForm = () => {
           </div>
         )}
 
-        {/* Navigation Buttons */}
+        {/* Step 4: Photo Upload Card (outside normal nav flow) */}
+        {currentStep === 4 && (
+          <div className="space-y-5">
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={(e) => { handlePhotoFile(e.target.files?.[0]); e.target.value = ''; }}
+            />
+
+            {/* Drop / Preview zone */}
+            <div
+              onClick={() => !avatarPreview && fileInputRef.current?.click()}
+              onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
+              onDragLeave={() => setIsDragging(false)}
+              onDrop={handleDrop}
+              className={`relative flex flex-col items-center justify-center rounded-xl border-2 border-dashed transition-colors cursor-pointer overflow-hidden
+                ${avatarPreview ? 'border-[#22c55e]/50 cursor-default' : isDragging ? 'border-[#22c55e] bg-[#22c55e]/5' : 'border-[#2a3a4d] hover:border-[#22c55e]/50 hover:bg-[#22c55e]/5'}`}
+              style={{ height: 220 }}
+            >
+              {isUploadingAvatar ? (
+                <div className="flex flex-col items-center gap-3">
+                  <div className="w-10 h-10 border-2 border-[#22c55e] border-t-transparent rounded-full animate-spin" />
+                  <p className="text-sm text-[#64748b]">Processing…</p>
+                </div>
+              ) : avatarPreview ? (
+                <>
+                  <img src={avatarPreview} alt="Preview" className="w-full h-full object-cover" />
+                  <div className="absolute inset-0 bg-black/40 opacity-0 hover:opacity-100 transition-opacity flex items-center justify-center">
+                    <button
+                      type="button"
+                      onClick={(e) => { e.stopPropagation(); fileInputRef.current?.click(); }}
+                      className="flex items-center gap-2 px-4 py-2 bg-[#22c55e] text-white rounded-lg text-sm font-medium"
+                    >
+                      <FiCamera className="w-4 h-4" /> Change Photo
+                    </button>
+                  </div>
+                </>
+              ) : (
+                <div className="flex flex-col items-center gap-3 p-6 text-center">
+                  <div className="w-16 h-16 rounded-full bg-[#141c28] border-2 border-[#2a3a4d] flex items-center justify-center">
+                    <FiUpload className="w-7 h-7 text-[#4ade80]" />
+                  </div>
+                  <div>
+                    <p className="text-white font-medium">Drag & drop or click to upload</p>
+                    <p className="text-xs text-[#64748b] mt-1">JPG, PNG or GIF · Max 5 MB</p>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Actions */}
+            <div className="flex gap-3">
+              <button
+                type="button"
+                onClick={() => navigate('/dashboard')}
+                className="flex-1 py-3 bg-[#141c28] text-[#64748b] font-medium rounded-lg border border-[#2a3a4d] hover:text-white hover:border-[#3d4f63] transition-all text-sm"
+              >
+                Not Now
+              </button>
+              <button
+                type="button"
+                onClick={handleUploadAndContinue}
+                disabled={isUploadingAvatar || !avatarPreview}
+                className="flex-1 py-3 bg-[#1a5f2a] text-[#4ade80] font-semibold rounded-lg border border-[#22c55e]/30 hover:bg-[#22723a] transition-all flex items-center justify-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed"
+              >
+                {isUploadingAvatar ? (
+                  <span className="w-4 h-4 border-2 border-[#4ade80]/30 border-t-[#4ade80] rounded-full animate-spin" />
+                ) : (
+                  <FiCheck className="w-5 h-5" />
+                )}
+                Save & Continue
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Navigation Buttons (steps 1–3 only) */}
+        {currentStep < 4 && (
         <div className="flex gap-4 pt-4">
           {currentStep > 1 && (
             <button
@@ -413,18 +570,21 @@ const RegisterForm = () => {
             </button>
           )}
         </div>
+        )}
       </form>
 
       {/* Login Link */}
-      <p className="mt-8 text-center text-[#64748b]">
-        Already have an account?{' '}
-        <Link
-          to="/login"
-          className="text-[#4ade80] hover:text-[#22c55e] font-medium transition-colors"
-        >
-          Sign in
-        </Link>
-      </p>
+      {currentStep < 4 && (
+        <p className="mt-8 text-center text-[#64748b]">
+          Already have an account?{' '}
+          <Link
+            to="/login"
+            className="text-[#4ade80] hover:text-[#22c55e] font-medium transition-colors"
+          >
+            Sign in
+          </Link>
+        </p>
+      )}
     </div>
   );
 };

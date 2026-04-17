@@ -84,7 +84,7 @@ app.use(cookieParser());
 
 // Middleware to ensure DB connection for each request (for serverless)
 app.use(async (req, res, next) => {
-  //if (mongoose.connection.readyState === 1) return next();
+  if (mongoose.connection.readyState === 1) return next();
   try {
     await connectDB();
     next();

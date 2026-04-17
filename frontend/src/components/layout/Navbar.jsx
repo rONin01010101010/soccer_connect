@@ -150,7 +150,9 @@ const Navbar = () => {
                     />
                     <div className="text-left hidden xl:block">
                       <p className="text-sm font-medium text-white">
-                        {user?.name || 'User'}
+                        {user?.first_name
+                          ? `${user.first_name} ${user.last_name || ''}`.trim()
+                          : user?.username || 'User'}
                       </p>
                     </div>
                     <FiChevronDown
@@ -165,7 +167,9 @@ const Navbar = () => {
                     <div className="absolute right-0 mt-2 w-56 bg-[#141c28] border border-[#2a3a4d] rounded-lg shadow-xl overflow-hidden">
                       <div className="px-4 py-3 border-b border-[#2a3a4d] bg-[#1c2430]">
                         <p className="text-sm font-medium text-white">
-                          {user?.name}
+                          {user?.first_name
+                            ? `${user.first_name} ${user.last_name || ''}`.trim()
+                            : user?.username || 'User'}
                         </p>
                         <p className="text-xs text-[#64748b]">{user?.email}</p>
                       </div>
@@ -237,7 +241,11 @@ const Navbar = () => {
               <div className="flex items-center gap-3 px-3 py-3 mb-4 bg-[#141c28] rounded-lg border border-[#2a3a4d]">
                 <Avatar src={user?.profileImage} name={user?.name} size="sm" />
                 <div>
-                  <p className="font-medium text-white text-sm">{user?.name}</p>
+                  <p className="font-medium text-white text-sm">
+                    {user?.first_name
+                      ? `${user.first_name} ${user.last_name || ''}`.trim()
+                      : user?.username || 'User'}
+                  </p>
                   <p className="text-xs text-[#64748b]">@{user?.username}</p>
                 </div>
               </div>

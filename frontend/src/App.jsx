@@ -34,6 +34,8 @@ import PrivacyPage from './pages/PrivacyPage';
 import PlayerProfilePage from './pages/PlayerProfilePage';
 import FindPlayersPage from './pages/FindPlayersPage';
 import AboutPage from './pages/AboutPage';
+import NotificationsPage from './pages/NotificationsPage';
+import EditClassifiedPage from './pages/EditClassifiedPage';
 
 // Admin Pages
 import {
@@ -111,8 +113,10 @@ function App() {
           <Route element={<ProtectedRoute />}>
             <Route path="dashboard" element={<DashboardPage />} />
             <Route path="account" element={<AccountPage />} />
+            <Route path="notifications" element={<NotificationsPage />} />
             <Route path="events/create" element={<CreateEventPage />} />
             <Route path="classifieds/create" element={<CreateClassifiedPage />} />
+            <Route path="classifieds/:id/edit" element={<EditClassifiedPage />} />
             <Route path="teams/create" element={<CreateTeamPage />} />
             <Route path="team" element={<MyTeamPage />} />
             <Route path="messages" element={<MessagesPage />} />

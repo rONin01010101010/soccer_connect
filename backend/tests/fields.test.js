@@ -104,6 +104,133 @@ describe('Field Routes', () => {
     });
   });
 
+  describe('POST /api/fields/:id/reviews', () => {
+    let fieldId;
+    let token;
+
+    beforeEach(async () => {
+      const field = await Field.findOne({ name: validField.name });
+      fieldId = field._id.toString();
+
+      const res = await request(app)
+        .post('/api/auth/register')
+        .send({
+          username: 'reviewuser',
+          email: 'reviewer@example.com',
+          password: 'password123',
+          first_name: 'Review',
+          last_name: 'User',
+          user_type: 'player',
+          date_of_birth: new Date('1995-01-15')
+        });
+      token = res.body.data.token;
+    });
+
+    it('should add a review successfully', async () => {
+      const res = await request(app)
+        .post(`/api/fields/${fieldId}/reviews`)
+        .set('Authorization', `Bearer ${token}`)
+        .send({ rating: 4, comment: 'Great field, well maintained!' });
+
+      expect(res.status).toBe(201);
+      expect(res.body.success).toBe(true);
+      expect(res.body.data.review.rating).toBe(4);
+      expect(res.body.data.rating).toBeDefined();
+    });
+
+    it('should add a review without comment', async () => {
+      const res = await request(app)
+        .post(`/api/fields/${fieldId}/reviews`)
+        .set('Authorization', `Bearer ${token}`)
+        .send({ rating: 5 });
+
+      expect(res.status).toBe(201);
+      expect(res.body.data.review.rating).toBe(5);
+    });
+
+    it('should update field average rating after review', async () => {
+      await request(app)
+        .post(`/api/fields/${fieldId}/reviews`)
+        .set('Authorization', `Bearer ${token}`)
+        .send({ rating: 4, comment: 'Good field' });
+
+      const fieldRes = await request(app).get(`/api/fields/${fieldId}`);
+      expect(fieldRes.body.data.field.rating.average).toBeGreaterThan(0);
+      expect(fieldRes.body.data.field.rating.count).toBe(1);
+    });
+
+    it('should reject invalid rating below 1', async () => {
+      const res = await request(app)
+        .post(`/api/fields/${fieldId}/reviews`)
+        .set('Authorization', `Bearer ${token}`)
+        .send({ rating: 0, comment: 'Bad' });
+
+      expect(res.status).toBe(400);
+    });
+
+    it('should reject invalid rating above 5', async () => {
+      const res = await request(app)
+        .post(`/api/fields/${fieldId}/reviews`)
+        .set('Authorization', `Bearer ${token}`)
+        .send({ rating: 6, comment: 'Too high' });
+
+      expect(res.status).toBe(400);
+    });
+
+    it('should prevent duplicate reviews from same user', async () => {
+      await request(app)
+        .post(`/api/fields/${fieldId}/reviews`)
+        .set('Authorization', `Bearer ${token}`)
+        .send({ rating: 4, comment: 'First review' });
+
+      const res = await request(app)
+        .post(`/api/fields/${fieldId}/reviews`)
+        .set('Authorization', `Bearer ${token}`)
+        .send({ rating: 2, comment: 'Duplicate' });
+
+      expect(res.status).toBe(400);
+      expect(res.body.message).toContain('already');
+    });
+
+    it('should fail without authentication', async () => {
+      const res = await request(app)
+        .post(`/api/fields/${fieldId}/reviews`)
+        .send({ rating: 3, comment: 'No auth' });
+
+      expect(res.status).toBe(401);
+    });
+
+    it('should return 404 for non-existent field', async () => {
+      const fakeId = new mongoose.Types.ObjectId();
+      const res = await request(app)
+        .post(`/api/fields/${fakeId}/reviews`)
+        .set('Authorization', `Bearer ${token}`)
+        .send({ rating: 3 });
+
+      expect(res.status).toBe(404);
+    });
+  });
+
+  describe('GET /api/fields (search filter)', () => {
+    it('should filter fields by partial name search', async () => {
+      const res = await request(app)
+        .get('/api/fields')
+        .query({ search: 'Downsview' });
+
+      expect(res.status).toBe(200);
+      expect(res.body.data.fields.some(f => f.name.includes('Downsview'))).toBe(true);
+    });
+
+    it('should do case-insensitive name search', async () => {
+      const res = await request(app)
+        .get('/api/fields')
+        .query({ search: 'downsview' });
+
+      expect(res.status).toBe(200);
+      expect(res.body.data.fields.some(f => f.name.toLowerCase().includes('downsview'))).toBe(true);
+    });
+  });
+
   describe('GET /api/fields/:id/availability', () => {
     let fieldId;
 

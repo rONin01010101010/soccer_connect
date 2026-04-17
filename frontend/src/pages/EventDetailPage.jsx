@@ -124,6 +124,9 @@ const EventDetailPage = () => {
   const [showMessageModal, setShowMessageModal] = useState(false);
   const [messageContent, setMessageContent] = useState('');
   const [isSendingMessage, setIsSendingMessage] = useState(false);
+  const [isSaved, setIsSaved] = useState(false);
+  const [commentText, setCommentText] = useState('');
+  const [isPostingComment, setIsPostingComment] = useState(false);
 
   const eventTypeMap = {
     pickup_game: 'pickup',
@@ -333,6 +336,58 @@ const EventDetailPage = () => {
       toast.error(error.response?.data?.message || 'Failed to join event');
     } finally {
       setIsJoining(false);
+    }
+  };
+
+  const handleSaveEvent = () => {
+    if (!isAuthenticated) {
+      toast.error('Please login to save events');
+      return;
+    }
+    setIsSaved(prev => !prev);
+    toast.success(isSaved ? 'Removed from saved events' : 'Event saved!');
+  };
+
+  const handleCopyLink = async () => {
+    try {
+      await navigator.clipboard.writeText(window.location.href);
+      toast.success('Link copied to clipboard!');
+    } catch {
+      toast.error('Failed to copy link');
+    }
+  };
+
+  const handlePostComment = async () => {
+    if (!commentText.trim()) return;
+    setIsPostingComment(true);
+    try {
+      const response = await eventsAPI.addComment(id, commentText.trim());
+      const newComment = response.data?.comment;
+      if (newComment) {
+        setEvent(prev => ({
+          ...prev,
+          comments: [
+            ...prev.comments,
+            {
+              id: newComment._id,
+              user: {
+                name: user?.first_name
+                  ? `${user.first_name} ${user.last_name || ''}`.trim()
+                  : user?.username || 'You',
+                avatar: user?.avatar || null,
+              },
+              text: newComment.content,
+              time: new Date().toLocaleDateString(),
+            },
+          ],
+        }));
+      }
+      setCommentText('');
+      toast.success('Comment posted!');
+    } catch (error) {
+      toast.error(error.response?.data?.message || 'Failed to post comment');
+    } finally {
+      setIsPostingComment(false);
     }
   };
 
@@ -554,10 +609,16 @@ const EventDetailPage = () => {
                     <textarea
                       className="w-full px-4 py-3 bg-[#141c28] border border-[#2a3a4d] rounded-lg text-white placeholder-[#64748b] focus:outline-none focus:border-[#4ade80]/50 min-h-[80px] resize-none"
                       placeholder="Add a comment..."
+                      value={commentText}
+                      onChange={(e) => setCommentText(e.target.value)}
                     />
                     <div className="flex justify-end mt-2">
-                      <button className="px-4 py-2 bg-[#1a5f2a] text-[#4ade80] rounded-lg border border-[#22c55e]/30 hover:bg-[#22723a] transition-all text-sm font-medium">
-                        Post Comment
+                      <button
+                        onClick={handlePostComment}
+                        disabled={isPostingComment || !commentText.trim()}
+                        className="px-4 py-2 bg-[#1a5f2a] text-[#4ade80] rounded-lg border border-[#22c55e]/30 hover:bg-[#22723a] transition-all text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        {isPostingComment ? 'Posting...' : 'Post Comment'}
                       </button>
                     </div>
                   </div>
@@ -626,9 +687,16 @@ const EventDetailPage = () => {
                   <FiShare2 className="w-4 h-4" />
                   Share
                 </button>
-                <button className="flex-1 py-2 bg-[#141c28] text-[#64748b] rounded-lg border border-[#2a3a4d] hover:text-white hover:border-[#3d4f63] transition-all flex items-center justify-center gap-2">
-                  <FiHeart className="w-4 h-4" />
-                  Save
+                <button
+                  onClick={handleSaveEvent}
+                  className={`flex-1 py-2 rounded-lg border flex items-center justify-center gap-2 transition-all ${
+                    isSaved
+                      ? 'bg-[#ef4444]/10 text-[#ef4444] border-[#ef4444]/30'
+                      : 'bg-[#141c28] text-[#64748b] border-[#2a3a4d] hover:text-white hover:border-[#3d4f63]'
+                  }`}
+                >
+                  <FiHeart className={`w-4 h-4 ${isSaved ? 'fill-[#ef4444]' : ''}`} />
+                  {isSaved ? 'Saved' : 'Save'}
                 </button>
               </div>
             </div>
@@ -705,13 +773,22 @@ const EventDetailPage = () => {
             <h2 className="text-xl font-bold text-white mb-2">Share Event</h2>
             <p className="text-sm text-[#64748b] mb-6">Share this event with your friends!</p>
             <div className="flex gap-3">
-              <button className="flex-1 py-3 bg-[#141c28] text-white rounded-lg border border-[#2a3a4d] hover:bg-[#1c2430] transition-all font-medium">
+              <button
+                onClick={() => { handleCopyLink(); setShowShareModal(false); }}
+                className="flex-1 py-3 bg-[#141c28] text-white rounded-lg border border-[#2a3a4d] hover:bg-[#1c2430] transition-all font-medium"
+              >
                 Copy Link
               </button>
-              <button className="flex-1 py-3 bg-[#141c28] text-white rounded-lg border border-[#2a3a4d] hover:bg-[#1c2430] transition-all font-medium">
+              <button
+                onClick={() => window.open(`https://twitter.com/intent/tweet?url=${encodeURIComponent(window.location.href)}`, '_blank')}
+                className="flex-1 py-3 bg-[#141c28] text-white rounded-lg border border-[#2a3a4d] hover:bg-[#1c2430] transition-all font-medium"
+              >
                 Twitter
               </button>
-              <button className="flex-1 py-3 bg-[#141c28] text-white rounded-lg border border-[#2a3a4d] hover:bg-[#1c2430] transition-all font-medium">
+              <button
+                onClick={() => window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(window.location.href)}`, '_blank')}
+                className="flex-1 py-3 bg-[#141c28] text-white rounded-lg border border-[#2a3a4d] hover:bg-[#1c2430] transition-all font-medium"
+              >
                 Facebook
               </button>
             </div>

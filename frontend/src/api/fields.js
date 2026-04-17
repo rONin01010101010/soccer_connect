@@ -20,6 +20,11 @@ export const fieldsAPI = {
     const response = await api.get('/fields/nearby', { params: { lat, lng, maxDistance } });
     return response.data;
   },
+
+  addReview: async (id, rating, comment) => {
+    const response = await api.post(`/fields/${id}/reviews`, { rating, comment });
+    return response.data;
+  },
 };
 
 export const bookingsAPI = {

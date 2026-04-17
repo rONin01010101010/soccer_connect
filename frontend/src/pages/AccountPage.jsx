@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -16,6 +16,7 @@ import {
   FiBell,
   FiEye,
   FiCheck,
+  FiUpload,
 } from 'react-icons/fi';
 import useAuthStore from '../store/authStore';
 
@@ -88,11 +89,34 @@ const InputField = ({ label, icon: Icon, error, ...props }) => (
   </div>
 );
 
+const resizeImageToBase64 = (file, maxSize = 400) =>
+  new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        const ratio = Math.min(maxSize / img.width, maxSize / img.height, 1);
+        canvas.width = img.width * ratio;
+        canvas.height = img.height * ratio;
+        canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
+        resolve(canvas.toDataURL('image/jpeg', 0.85));
+      };
+      img.onerror = reject;
+      img.src = e.target.result;
+    };
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+
 const AccountPage = () => {
   const { user, updateUser } = useAuthStore();
   const [activeTab, setActiveTab] = useState('profile');
   const [isUpdatingProfile, setIsUpdatingProfile] = useState(false);
   const [isUpdatingPassword, setIsUpdatingPassword] = useState(false);
+  const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
+  const [avatarPreview, setAvatarPreview] = useState(null);
+  const fileInputRef = useRef(null);
   const [notifications, setNotifications] = useState({
     gameReminders: true,
     newMessages: true,
@@ -174,6 +198,51 @@ const AccountPage = () => {
     }
   };
 
+  const handleFileSelect = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (!file.type.startsWith('image/')) {
+      toast.error('Please select an image file');
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error('Image must be smaller than 5 MB');
+      return;
+    }
+    setIsUploadingAvatar(true);
+    try {
+      const base64 = await resizeImageToBase64(file);
+      setAvatarPreview(base64);
+      const { usersAPI } = await import('../api/users');
+      const response = await usersAPI.update(user.id || user._id, { avatar: base64 });
+      updateUser(response.data.user);
+      toast.success('Profile photo updated!');
+    } catch {
+      toast.error('Failed to upload photo');
+      setAvatarPreview(null);
+    } finally {
+      setIsUploadingAvatar(false);
+      e.target.value = '';
+    }
+  };
+
+  const handleRemoveAvatar = async () => {
+    setIsUploadingAvatar(true);
+    try {
+      const { usersAPI } = await import('../api/users');
+      const response = await usersAPI.update(user.id || user._id, { avatar: '' });
+      updateUser(response.data.user);
+      setAvatarPreview(null);
+      toast.success('Profile photo removed');
+    } catch {
+      toast.error('Failed to remove photo');
+    } finally {
+      setIsUploadingAvatar(false);
+    }
+  };
+
+  const currentAvatar = avatarPreview || user?.avatar || user?.profileImage;
+
   return (
     <div className="min-h-screen bg-[#0a0e14]">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -228,12 +297,19 @@ const AccountPage = () => {
                     <div className="w-2 h-2 rounded-full bg-[#22c55e]" />
                   </div>
                   <div className="p-6">
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      onChange={handleFileSelect}
+                    />
                     <div className="flex items-center gap-6">
-                      <div className="relative">
+                      <div className="relative flex-shrink-0">
                         <div className="w-24 h-24 rounded-xl bg-[#141c28] border-2 border-[#2a3a4d] overflow-hidden">
-                          {user?.avatar || user?.profileImage ? (
+                          {currentAvatar ? (
                             <img
-                              src={user.avatar || user.profileImage}
+                              src={currentAvatar}
                               alt="Profile"
                               className="w-full h-full object-cover"
                             />
@@ -245,21 +321,44 @@ const AccountPage = () => {
                             </div>
                           )}
                         </div>
-                        <button className="absolute -bottom-2 -right-2 w-8 h-8 rounded-full bg-[#22c55e] text-white flex items-center justify-center hover:bg-[#16a34a] transition-colors shadow-lg shadow-[#22c55e]/25">
-                          <FiCamera className="w-4 h-4" />
+                        <button
+                          type="button"
+                          onClick={() => fileInputRef.current?.click()}
+                          disabled={isUploadingAvatar}
+                          className="absolute -bottom-2 -right-2 w-8 h-8 rounded-full bg-[#22c55e] text-white flex items-center justify-center hover:bg-[#16a34a] transition-colors shadow-lg shadow-[#22c55e]/25 disabled:opacity-50"
+                        >
+                          {isUploadingAvatar ? (
+                            <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                          ) : (
+                            <FiCamera className="w-4 h-4" />
+                          )}
                         </button>
                       </div>
                       <div>
                         <h3 className="font-semibold text-white mb-1">{user?.first_name} {user?.last_name}</h3>
                         <p className="text-sm text-[#64748b] mb-4 font-mono">@{user?.username}</p>
                         <div className="flex gap-3">
-                          <button className="px-4 py-2 bg-[#141c28] border border-[#2a3a4d] rounded-lg text-sm text-white hover:bg-[#1c2430] transition-colors">
+                          <button
+                            type="button"
+                            onClick={() => fileInputRef.current?.click()}
+                            disabled={isUploadingAvatar}
+                            className="flex items-center gap-2 px-4 py-2 bg-[#141c28] border border-[#2a3a4d] rounded-lg text-sm text-white hover:bg-[#1c2430] transition-colors disabled:opacity-50"
+                          >
+                            <FiUpload className="w-3.5 h-3.5" />
                             Upload Photo
                           </button>
-                          <button className="px-4 py-2 bg-transparent border border-[#2a3a4d] rounded-lg text-sm text-[#64748b] hover:text-[#ef4444] hover:border-[#ef4444]/30 transition-colors">
-                            Remove
-                          </button>
+                          {currentAvatar && (
+                            <button
+                              type="button"
+                              onClick={handleRemoveAvatar}
+                              disabled={isUploadingAvatar}
+                              className="px-4 py-2 bg-transparent border border-[#2a3a4d] rounded-lg text-sm text-[#64748b] hover:text-[#ef4444] hover:border-[#ef4444]/30 transition-colors disabled:opacity-50"
+                            >
+                              Remove
+                            </button>
+                          )}
                         </div>
+                        <p className="text-xs text-[#4b5563] mt-2">JPG, PNG or GIF · Max 5 MB</p>
                       </div>
                     </div>
                   </div>

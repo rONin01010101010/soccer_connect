@@ -714,4 +714,58 @@ router.post('/:id/message', protect, mongoIdValidation, async (req, res, next) =
   }
 });
 
+// @route   POST /api/events/:id/comments
+// @desc    Add a comment to an event
+// @access  Private
+router.post('/:id/comments', protect, mongoIdValidation, async (req, res, next) => {
+  try {
+    const { content } = req.body;
+
+    if (!content || !content.trim()) {
+      return res.status(400).json({
+        success: false,
+        message: 'Comment content is required'
+      });
+    }
+
+    if (content.trim().length > 500) {
+      return res.status(400).json({
+        success: false,
+        message: 'Comment cannot exceed 500 characters'
+      });
+    }
+
+    const event = await Event.findById(req.params.id);
+
+    if (!event) {
+      return res.status(404).json({
+        success: false,
+        message: 'Event not found'
+      });
+    }
+
+    const comment = {
+      user: req.user._id,
+      content: content.trim(),
+      createdAt: new Date()
+    };
+
+    event.comments.push(comment);
+    await event.save();
+
+    const populatedEvent = await Event.findById(event._id)
+      .populate('comments.user', 'username first_name last_name avatar');
+
+    const newComment = populatedEvent.comments[populatedEvent.comments.length - 1];
+
+    res.status(201).json({
+      success: true,
+      message: 'Comment added',
+      data: { comment: newComment }
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
 module.exports = router;

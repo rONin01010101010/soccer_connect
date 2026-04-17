@@ -585,4 +585,63 @@ describe('Event Routes', () => {
       });
     });
   });
+
+  describe('POST /api/events/:id/comments', () => {
+    let eventId;
+
+    beforeEach(async () => {
+      const eventRes = await request(app)
+        .post('/api/events')
+        .set('Authorization', `Bearer ${token}`)
+        .send({ ...validEvent, approval_status: 'approved' });
+      eventId = eventRes.body.data.event._id;
+    });
+
+    it('should add a comment to an event', async () => {
+      const res = await request(app)
+        .post(`/api/events/${eventId}/comments`)
+        .set('Authorization', `Bearer ${token}`)
+        .send({ content: 'Looking forward to this game!' });
+
+      expect(res.status).toBe(201);
+      expect(res.body.success).toBe(true);
+      expect(res.body.data.comment.content).toBe('Looking forward to this game!');
+    });
+
+    it('should reject empty comment content', async () => {
+      const res = await request(app)
+        .post(`/api/events/${eventId}/comments`)
+        .set('Authorization', `Bearer ${token}`)
+        .send({ content: '   ' });
+
+      expect(res.status).toBe(400);
+    });
+
+    it('should reject comment exceeding 500 characters', async () => {
+      const res = await request(app)
+        .post(`/api/events/${eventId}/comments`)
+        .set('Authorization', `Bearer ${token}`)
+        .send({ content: 'x'.repeat(501) });
+
+      expect(res.status).toBe(400);
+    });
+
+    it('should reject unauthenticated comment', async () => {
+      const res = await request(app)
+        .post(`/api/events/${eventId}/comments`)
+        .send({ content: 'Unauthorized comment' });
+
+      expect(res.status).toBe(401);
+    });
+
+    it('should return 404 for non-existent event', async () => {
+      const fakeId = new mongoose.Types.ObjectId();
+      const res = await request(app)
+        .post(`/api/events/${fakeId}/comments`)
+        .set('Authorization', `Bearer ${token}`)
+        .send({ content: 'Test comment' });
+
+      expect(res.status).toBe(404);
+    });
+  });
 });

@@ -17,7 +17,7 @@ import {
 import { GiSoccerField } from 'react-icons/gi';
 import { Loading } from '../components/common';
 import useAuthStore from '../store/authStore';
-import { fieldsAPI } from '../api';
+import { fieldsAPI } from '../api/fields';
 
 // Info Card Component
 const InfoCard = ({ label, value, valueClass = 'text-white' }) => (
@@ -89,6 +89,11 @@ const FieldDetailPage = () => {
   const [selectedStartTime, setSelectedStartTime] = useState('');
   const [selectedEndTime, setSelectedEndTime] = useState('');
   const [isBooking, setIsBooking] = useState(false);
+  const [isSaved, setIsSaved] = useState(false);
+  const [showReviewModal, setShowReviewModal] = useState(false);
+  const [reviewRating, setReviewRating] = useState(5);
+  const [reviewComment, setReviewComment] = useState('');
+  const [isSubmittingReview, setIsSubmittingReview] = useState(false);
 
   useEffect(() => {
     const fetchField = async () => {
@@ -187,6 +192,66 @@ const FieldDetailPage = () => {
 
     fetchField();
   }, [id]);
+
+  const handleSaveField = () => {
+    if (!isAuthenticated) {
+      toast.error('Please login to save fields');
+      return;
+    }
+    setIsSaved(prev => !prev);
+    toast.success(isSaved ? 'Removed from saved fields' : 'Field saved!');
+  };
+
+  const handleCopyLink = async () => {
+    try {
+      await navigator.clipboard.writeText(window.location.href);
+      toast.success('Link copied to clipboard!');
+    } catch {
+      toast.error('Failed to copy link');
+    }
+  };
+
+  const handleSubmitReview = async () => {
+    if (!isAuthenticated) {
+      toast.error('Please login to write a review');
+      return;
+    }
+    setIsSubmittingReview(true);
+    try {
+      const response = await fieldsAPI.addReview(id, reviewRating, reviewComment);
+      const newReview = response.data?.review;
+      if (newReview) {
+        setField(prev => ({
+          ...prev,
+          reviews: [
+            ...prev.reviews,
+            {
+              id: newReview._id,
+              user: {
+                name: newReview.user?.first_name
+                  ? `${newReview.user.first_name} ${newReview.user.last_name || ''}`.trim()
+                  : newReview.user?.username || 'You',
+                avatar: newReview.user?.avatar || null,
+              },
+              rating: newReview.rating,
+              comment: newReview.comment,
+              date: newReview.created_at || new Date().toISOString(),
+            },
+          ],
+          rating: response.data?.rating?.average ?? prev.rating,
+          reviewCount: response.data?.rating?.count ?? prev.reviewCount,
+        }));
+      }
+      setShowReviewModal(false);
+      setReviewComment('');
+      setReviewRating(5);
+      toast.success('Review submitted!');
+    } catch (error) {
+      toast.error(error.response?.data?.message || 'Failed to submit review');
+    } finally {
+      setIsSubmittingReview(false);
+    }
+  };
 
   const handleBooking = async () => {
     if (!isAuthenticated) {
@@ -369,7 +434,16 @@ const FieldDetailPage = () => {
                 <h2 className="text-xs font-medium text-[#64748b] uppercase tracking-wider">
                   Reviews ({field.reviews.length})
                 </h2>
-                <button className="px-3 py-1.5 bg-[#141c28] text-[#64748b] rounded-lg border border-[#2a3a4d] hover:text-white hover:border-[#3d4f63] transition-all text-sm">
+                <button
+                  onClick={() => {
+                    if (!isAuthenticated) {
+                      toast.error('Please login to write a review');
+                      return;
+                    }
+                    setShowReviewModal(true);
+                  }}
+                  className="px-3 py-1.5 bg-[#141c28] text-[#64748b] rounded-lg border border-[#2a3a4d] hover:text-white hover:border-[#3d4f63] transition-all text-sm"
+                >
                   Write Review
                 </button>
               </div>
@@ -405,13 +479,23 @@ const FieldDetailPage = () => {
               </button>
 
               <div className="flex gap-2 mt-4">
-                <button className="flex-1 py-2 bg-[#141c28] text-[#64748b] rounded-lg border border-[#2a3a4d] hover:text-white hover:border-[#3d4f63] transition-all flex items-center justify-center gap-2">
+                <button
+                  onClick={handleCopyLink}
+                  className="flex-1 py-2 bg-[#141c28] text-[#64748b] rounded-lg border border-[#2a3a4d] hover:text-white hover:border-[#3d4f63] transition-all flex items-center justify-center gap-2"
+                >
                   <FiShare2 className="w-4 h-4" />
                   Share
                 </button>
-                <button className="flex-1 py-2 bg-[#141c28] text-[#64748b] rounded-lg border border-[#2a3a4d] hover:text-white hover:border-[#3d4f63] transition-all flex items-center justify-center gap-2">
-                  <FiHeart className="w-4 h-4" />
-                  Save
+                <button
+                  onClick={handleSaveField}
+                  className={`flex-1 py-2 rounded-lg border flex items-center justify-center gap-2 transition-all ${
+                    isSaved
+                      ? 'bg-[#ef4444]/10 text-[#ef4444] border-[#ef4444]/30'
+                      : 'bg-[#141c28] text-[#64748b] border-[#2a3a4d] hover:text-white hover:border-[#3d4f63]'
+                  }`}
+                >
+                  <FiHeart className={`w-4 h-4 ${isSaved ? 'fill-[#ef4444]' : ''}`} />
+                  {isSaved ? 'Saved' : 'Save'}
                 </button>
               </div>
             </div>
@@ -572,6 +656,71 @@ const FieldDetailPage = () => {
                 className="flex-1 py-3 bg-[#1a5f2a] text-[#4ade80] rounded-lg border border-[#22c55e]/30 hover:bg-[#22723a] transition-all font-medium disabled:opacity-50"
               >
                 {isBooking ? 'Processing...' : field.pricePerHour === 0 ? 'Reserve Spot' : 'Proceed to Payment'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Write Review Modal */}
+      {showReviewModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/70" onClick={() => setShowReviewModal(false)} />
+          <div className="relative w-full max-w-md bg-[#0d1219] border border-[#1c2430] rounded-xl p-6">
+            <h2 className="text-xl font-bold text-white mb-2">Write a Review</h2>
+            <p className="text-sm text-[#64748b] mb-6">Share your experience at {field.name}</p>
+
+            <div className="space-y-4">
+              <div>
+                <label className="block text-xs font-medium text-[#64748b] uppercase tracking-wider mb-3">
+                  Rating
+                </label>
+                <div className="flex gap-2">
+                  {[1, 2, 3, 4, 5].map((star) => (
+                    <button
+                      key={star}
+                      type="button"
+                      onClick={() => setReviewRating(star)}
+                      className="focus:outline-none"
+                    >
+                      <FiStar
+                        className={`w-8 h-8 transition-colors ${
+                          star <= reviewRating
+                            ? 'text-[#f59e0b] fill-[#f59e0b]'
+                            : 'text-[#2a3a4d] hover:text-[#f59e0b]'
+                        }`}
+                      />
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-medium text-[#64748b] uppercase tracking-wider mb-2">
+                  Comment (optional)
+                </label>
+                <textarea
+                  className="w-full px-4 py-3 bg-[#141c28] border border-[#2a3a4d] rounded-lg text-white placeholder-[#64748b] focus:outline-none focus:border-[#4ade80]/50 min-h-[100px] resize-none"
+                  placeholder="Tell others about your experience..."
+                  value={reviewComment}
+                  onChange={(e) => setReviewComment(e.target.value)}
+                />
+              </div>
+            </div>
+
+            <div className="flex gap-3 mt-6">
+              <button
+                onClick={() => setShowReviewModal(false)}
+                className="flex-1 py-3 bg-[#141c28] text-white rounded-lg border border-[#2a3a4d] hover:bg-[#1c2430] transition-all font-medium"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleSubmitReview}
+                disabled={isSubmittingReview}
+                className="flex-1 py-3 bg-[#1a5f2a] text-[#4ade80] rounded-lg border border-[#22c55e]/30 hover:bg-[#22723a] transition-all font-medium disabled:opacity-50"
+              >
+                {isSubmittingReview ? 'Submitting...' : 'Submit Review'}
               </button>
             </div>
           </div>

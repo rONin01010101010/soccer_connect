@@ -148,12 +148,15 @@ const FindPlayersPage = () => {
           <div className="px-3 sm:px-4 py-3 border-b border-[#1c2430] flex items-center justify-between">
             <span className="text-xs uppercase tracking-wider text-[#64748b]">Search & Filter</span>
             <div className="flex items-center gap-2">
-              {Object.values(filters).some(v => v) && (
+              {(Object.values(filters).some(v => v) || searchQuery) && (
                 <button
-                  onClick={() => setFilters({ position: '', skill_level: '', available: 'true' })}
+                  onClick={() => {
+                    setFilters({ position: '', skill_level: '', available: 'true' });
+                    setSearchQuery('');
+                  }}
                   className="text-xs text-[#ef4444] hover:text-[#f87171] transition-colors"
                 >
-                  Clear Filters
+                  Clear All
                 </button>
               )}
             </div>

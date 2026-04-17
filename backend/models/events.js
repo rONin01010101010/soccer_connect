@@ -161,7 +161,23 @@ const eventSchema = new mongoose.Schema({
     ref: 'User'
   },
   approved_at: Date,
-  rejection_reason: String
+  rejection_reason: String,
+  comments: [{
+    user: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User',
+      required: true
+    },
+    content: {
+      type: String,
+      required: true,
+      maxlength: [500, 'Comment cannot exceed 500 characters']
+    },
+    createdAt: {
+      type: Date,
+      default: Date.now
+    }
+  }]
 }, {
   timestamps: { createdAt: 'created_at', updatedAt: 'updated_at' }
 });
