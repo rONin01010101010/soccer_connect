@@ -47,13 +47,6 @@ const HomePage = () => {
     },
   ];
 
-  const stats = [
-    { value: '10,247', label: 'ACTIVE PLAYERS', trend: '+12%' },
-    { value: '523', label: 'TEAMS', trend: '+8%' },
-    { value: '2,891', label: 'GAMES PLAYED', trend: '+24%' },
-    { value: '156', label: 'PARTNER FIELDS', trend: '+5%' },
-  ];
-
   const howItWorks = [
     {
       step: '01',
@@ -123,7 +116,7 @@ const HomePage = () => {
           </p>
 
           {/* CTA Buttons */}
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-16">
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
             <Link
               to="/register"
               className="px-8 py-4 bg-[#1a5f2a] text-[#4ade80] font-semibold rounded-lg border border-[#22c55e]/30 hover:bg-[#22723a] hover:border-[#4ade80]/50 transition-all flex items-center gap-2"
@@ -138,26 +131,6 @@ const HomePage = () => {
               Browse Games
               <FiArrowRight className="w-5 h-5" />
             </Link>
-          </div>
-
-          {/* Live Stats Scoreboard */}
-          <div className="bg-[#0d1219] border border-[#1c2430] rounded-xl p-1 max-w-4xl mx-auto">
-            <div className="grid grid-cols-2 lg:grid-cols-4">
-              {stats.map((stat, index) => (
-                <div
-                  key={index}
-                  className={`p-6 ${index !== stats.length - 1 ? 'border-r border-[#1c2430]' : ''} ${index < 2 ? 'lg:border-r' : ''}`}
-                >
-                  <p className="text-3xl lg:text-4xl font-bold text-white font-mono mb-1">
-                    {stat.value}
-                  </p>
-                  <div className="flex items-center justify-center gap-2">
-                    <span className="text-xs text-[#64748b] uppercase tracking-wider">{stat.label}</span>
-                    <span className="text-xs text-[#4ade80]">{stat.trend}</span>
-                  </div>
-                </div>
-              ))}
-            </div>
           </div>
         </div>
 

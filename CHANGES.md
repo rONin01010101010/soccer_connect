@@ -76,6 +76,37 @@
 
 ## Recent Changes (Current Dev Branch)
 
+### Homepage Stats Removed — April 2026
+
+**File:** `frontend/src/pages/HomePage.jsx`
+
+Removed the hardcoded "Live Stats Scoreboard" widget from the hero section that displayed fabricated numbers (10,247 active players, 523 teams, 2,891 games played, 156 partner fields). These figures were static placeholders with no connection to real data, which was misleading. The hero section CTA buttons now sit cleanly above the scroll indicator without the scoreboard below them. All other homepage sections (features grid, how-it-works, benefits, final CTA) are unchanged.
+
+---
+
+### Profile Photo Upload — April 2026
+
+**Files:** `frontend/src/pages/AccountPage.jsx`, `frontend/src/components/auth/RegisterForm.jsx`, `backend/models/user.js`
+
+**Account Settings (`/account → Profile tab`):**
+- "Upload Photo" button and the camera badge on the avatar both trigger a hidden `<input type="file" accept="image/*">`.
+- Selected image is resized client-side to a max of 400×400 px using a canvas element before encoding to base64 JPEG (keeps stored size ≤ ~60 KB). No Cloudinary or external service required.
+- The base64 string is sent via the existing `PUT /api/users/:id` endpoint (`avatar` was already in `allowedFields`).
+- Auth store is updated immediately so the navbar and profile card reflect the new photo without a page refresh.
+- "Remove" button only renders when a photo exists; clears the `avatar` field to an empty string.
+- File type and 5 MB size limits are validated before upload.
+
+**Registration wizard (new step 4 — "Add a Profile Photo"):**
+- After account creation succeeds on step 3, the wizard advances to a step 4 instead of navigating to the dashboard.
+- The step indicator expands to show all four steps so users understand their progress.
+- Step 4 shows a drag-and-drop upload zone with a click-to-browse fallback.
+- Hovering over an uploaded preview shows a "Change Photo" overlay button.
+- **"Not Now"** button skips the upload and navigates directly to `/dashboard`.
+- **"Save & Continue"** resizes and uploads the photo, updates auth state, then navigates to `/dashboard`.
+- The header icon and subtitle change contextually on step 4; the "Already have an account?" link is hidden on this step.
+
+---
+
 ### Bug Fixes — April 2026 Sprint
 
 The following 20 bugs were identified from user screenshots and fixed across the full stack.
